@@ -20,8 +20,26 @@ export function CartProvider({ children }) {
           i.productId === product.id ? { ...i, quantity: i.quantity + quantity } : i
         );
       }
-      return [...prev, { productId: product.id, name: product.name, price: product.price, quantity }];
+      return [...prev, {
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url || null,
+        stock: product.stock ?? null,
+        quantity,
+      }];
     });
+  }
+
+  function updateQuantity(productId, quantity) {
+    if (quantity < 1) return removeFromCart(productId);
+    setItems((prev) =>
+      prev.map((i) =>
+        i.productId === productId
+          ? { ...i, quantity: i.stock != null ? Math.min(quantity, i.stock) : quantity }
+          : i
+      )
+    );
   }
 
   function removeFromCart(productId) {
@@ -35,7 +53,7 @@ export function CartProvider({ children }) {
   const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, clearCart, subtotal }}>
+    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, subtotal }}>
       {children}
     </CartContext.Provider>
   );
