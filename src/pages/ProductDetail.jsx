@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 import ImageGallery from "../components/ImageGallery";
 import { useCart } from "../context/CartContext";
-import { useToast } from "../context/ToastContext";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -12,7 +11,6 @@ export default function ProductDetail() {
   const [error, setError] = useState("");
   const [qty, setQty] = useState(1);
   const { addToCart, updateQuantity, items } = useCart();
-  const { toast } = useToast();
 
   useEffect(() => {
     setProduct(null);
@@ -71,10 +69,7 @@ export default function ProductDetail() {
   const action = inCart ? (
     <Link to="/cart" className="btn btn--ghost">In cart · View cart</Link>
   ) : (
-    <button className="btn btn--primary" onClick={() => {
-      addToCart(product, qty);
-      toast(`${qty > 1 ? `${qty} × ` : ""}${product.name} added to cart`);
-    }}>
+    <button className="btn btn--primary" onClick={() => addToCart(product, qty)}>
       Add to cart
     </button>
   );

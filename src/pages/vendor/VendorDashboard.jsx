@@ -1,29 +1,19 @@
-import { useEffect, useState } from "react";
-import client from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
+import DashboardShell from "../../components/DashboardShell";
+import { ListSkeleton } from "../../components/ListState";
 import VendorPayouts from "../../components/VendorPayouts";
-import { VENDOR_TABS } from "./VendorOrders";
-
-const kes = (n) => `KES ${Number(n || 0).toLocaleString()}`;
+import useList from "../../hooks/useList";
+import { kes } from "../../utils/format";
 
 export default function VendorDashboard() {
-  const [stats, setStats] = useState(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    client.get("/stats/vendor")
-      .then((res) => setStats(res.data))
-      .catch(() => setError("Couldn't load sales stats."));
-  }, []);
+  const { data: stats, error } = useList("/stats/vendor");
 
   const maxDaily = Math.max(1, ...(stats?.daily.map((d) => d.revenue) || [1]));
   const open = stats ? stats.byStatus.paid + stats.byStatus.shipped : 0;
 
   return (
-    <div className="page">
-      <h1>Selling on Fidus</h1>
-      <DashboardTabs base="/vendor" tabs={VENDOR_TABS} />
-      {error && <p className="error-text" style={{ marginTop: "1rem" }}>{error}</p>}
+    <DashboardShell area="vendor">
+      {error && <p className="error-text">{error}</p>}
+      {!stats && !error && <ListSkeleton rows={3} />}
 
       {stats && (
         <>
@@ -61,6 +51,6 @@ export default function VendorDashboard() {
       )}
 
       <VendorPayouts />
-    </div>
+    </DashboardShell>
   );
 }

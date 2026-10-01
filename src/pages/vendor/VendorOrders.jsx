@@ -1,18 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import client from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
+import DashboardShell from "../../components/DashboardShell";
+import FilterChips from "../../components/FilterChips";
+import { ListEmpty, ListSkeleton } from "../../components/ListState";
+import SearchBox from "../../components/SearchBox";
 import { useToast } from "../../context/ToastContext";
+import useList from "../../hooks/useList";
+import { kes, matches, shortDate } from "../../utils/format";
 
-const kes = (n) => `KES ${Number(n || 0).toLocaleString()}`;
 const FILTERS = ["", "paid", "shipped", "delivered", "pending", "cancelled"];
 const ACTION_LABELS = { shipped: "Mark shipped", delivered: "Mark delivered", cancelled: "Cancel order" };
-
-export const VENDOR_TABS = [
-  { to: "", label: "Overview" },
-  { to: "/orders", label: "Orders" },
-  { to: "/products", label: "Products" },
-];
 
 // The vendor's share of an order (they only ever see their own items)
 const vendorTotal = (order) =>
@@ -21,19 +19,9 @@ const vendorTotal = (order) =>
 export default function VendorOrders() {
   const navigate = useNavigate();
   const { toast, confirm } = useToast();
-  const [orders, setOrders] = useState([]);
   const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const load = (s = status) => {
-    setLoading(true);
-    client.get("/orders/vendor", { params: s ? { status: s } : {} })
-      .then((res) => { setOrders(res.data); setError(""); })
-      .catch(() => setError("Couldn't load orders."))
-      .finally(() => setLoading(false));
-  };
-  useEffect(() => { load(status); }, [status]);
+  const [query, setQuery] = useState("");
+  const { data: orders, loading, error, reload } = useList("/orders/vendor", { status: status || undefined });
 
   async function act(order, nextStatus, e) {
     e.preventDefault(); // the card is a Link — don't navigate
@@ -44,7 +32,7 @@ export default function VendorOrders() {
     }
     if (nextStatus === "cancelled") {
       const ok = await confirm({
-        title: `Cancel order #${order.id}?`,
+        title: `Cancel order #${order.order_no}?`,
         message: "Stock goes back on the shelf. The customer is emailed — a paid order needs a manual M-Pesa refund.",
         confirmLabel: "Cancel order",
         danger: true,
@@ -53,41 +41,38 @@ export default function VendorOrders() {
     }
     try {
       await client.put(`/orders/${order.id}/status`, { status: nextStatus });
-      toast(`Order #${order.id} marked ${nextStatus}`);
-      load();
+      toast(`Order #${order.order_no} marked ${nextStatus}`);
+      reload();
     } catch (err) {
       toast(err.response?.data?.message || "Couldn't update the order", { type: "error", duration: 3000 });
     }
   }
 
-  return (
-    <div className="page">
-      <h1>Selling on Fidus</h1>
-      <DashboardTabs base="/vendor" tabs={VENDOR_TABS} />
+  const shown = orders?.filter((o) =>
+    matches(query, `#${o.order_no}`, o.customer?.name, o.items.map((i) => i.product?.name).join(" ")));
 
-      <div className="chip-row" style={{ marginTop: "1.25rem" }}>
-        {FILTERS.map((f) => (
-          <button key={f || "all"} className={`chip${status === f ? " chip--active" : ""}`}
-            onClick={() => setStatus(f)}>
-            {f || "All"}
-          </button>
-        ))}
+  return (
+    <DashboardShell area="vendor">
+      <div className="toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Order #, customer or product" />
+        <FilterChips options={FILTERS} value={status} onChange={setStatus} />
       </div>
 
-      {error && <p className="error-text" style={{ marginTop: "1rem" }}>{error}</p>}
-      {!loading && orders.length === 0 && (
-        <p className="muted" style={{ marginTop: "1.5rem" }}>
-          {status ? `No ${status} orders.` : "No orders yet — they'll appear here when customers buy your products."}
-        </p>
+      {error && <p className="error-text">{error}</p>}
+      {!orders && !error && <ListSkeleton />}
+      {shown?.length === 0 && (
+        <ListEmpty query={query.trim()} filtered={status} onClear={() => { setQuery(""); setStatus(""); }}>
+          No orders yet — they'll appear here when customers buy your products.
+        </ListEmpty>
       )}
 
-      <div className="stack" style={{ marginTop: "1rem" }}>
-        {orders.map((o) => (
+      <div className={`stack${loading && orders ? " is-loading" : ""}`}>
+        {shown?.map((o) => (
           <Link key={o.id} to={`/vendor/orders/${o.id}`} className="card order-card">
             <div className="order-card__main">
-              <strong>Order #{o.id} · {o.customer?.name || "Customer"}</strong>
-              <span className="muted">
-                {new Date(o.created_at || o.createdAt).toLocaleDateString()} ·{" "}
+              <strong>#{o.order_no} · {o.customer?.name || "Customer"}</strong>
+              <span className="muted truncate">
+                {shortDate(o.created_at || o.createdAt)} ·{" "}
                 {o.items.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
               </span>
             </div>
@@ -107,6 +92,6 @@ export default function VendorOrders() {
           </Link>
         ))}
       </div>
-    </div>
+    </DashboardShell>
   );
 }

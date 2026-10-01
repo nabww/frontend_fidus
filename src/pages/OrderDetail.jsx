@@ -12,12 +12,18 @@ export default function OrderDetail() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   async function payNow() {
     setPaying(true);
     setError("");
     try {
-      await client.post(`/payments/pay/${order.id}`);
+      const { data: init } = await client.post(`/payments/pay/${order.id}`);
+      if (init.alreadyPaid) {
+        setOrder((o) => ({ ...o, status: "paid" }));
+        toast("Payment confirmed");
+        return;
+      }
       // Poll until Daraja confirms (or the callback lands first)
       const deadline = Date.now() + 90_000;
       while (Date.now() < deadline) {
@@ -29,10 +35,19 @@ export default function OrderDetail() {
           else toast("Payment was cancelled or timed out", { type: "error" });
           return;
         }
+        if (data.payment === "failed") {
+          setError(`${data.reason || "That payment attempt didn't go through"}. You can try again.`);
+          return;
+        }
       }
       setError("Still awaiting confirmation — check back shortly.");
     } catch (err) {
-      setError(err.response?.data?.message || "Couldn't initiate payment.");
+      if (err.response?.status === 409) {
+        // A prompt is already live on the customer's phone — don't re-push, just wait
+        setError("A payment prompt is already on your phone — complete it there.");
+      } else {
+        setError(err.response?.data?.message || "Couldn't initiate payment.");
+      }
     } finally {
       setPaying(false);
     }
@@ -43,6 +58,21 @@ export default function OrderDetail() {
       .then((res) => setOrder(res.data))
       .catch(() => setError("Order not found."));
   }, [id]);
+
+  // While a payment prompt is outstanding, keep polling OUR api — the server-side
+  // reconciler is the one talking to Daraja, so the page settles whenever it does
+  useEffect(() => {
+    if (order?.status !== "pending" || !order.checkout_request_id) return;
+    const t = setInterval(() => {
+      client.get(`/orders/${id}`).then((res) => {
+        if (res.data.status !== "pending") {
+          setOrder(res.data);
+          toast("Payment confirmed — thank you!");
+        }
+      }).catch(() => {});
+    }, 10_000);
+    return () => clearInterval(t);
+  }, [order?.status, order?.checkout_request_id, id]);
 
   async function cancel() {
     const ok = await confirm({
@@ -65,6 +95,26 @@ export default function OrderDetail() {
     }
   }
 
+  async function confirmReceived() {
+    const ok = await confirm({
+      title: "Confirm delivery?",
+      message: "Only confirm once the items are actually in your hands — this releases payment to the vendor.",
+      confirmLabel: "I received it",
+      cancelLabel: "Not yet",
+    });
+    if (!ok) return;
+    setConfirming(true);
+    try {
+      const { data } = await client.post(`/orders/${id}/confirm-delivery`);
+      setOrder((o) => ({ ...o, status: data.status }));
+      toast("Delivery confirmed — enjoy!");
+    } catch (err) {
+      toast(err.response?.data?.message || "Couldn't confirm delivery.", { type: "error" });
+    } finally {
+      setConfirming(false);
+    }
+  }
+
   if (error && !order) return <div className="page"><p className="error-text">{error}</p></div>;
   if (!order) return <div className="page"><p className="muted">Loading...</p></div>;
 
@@ -74,7 +124,7 @@ export default function OrderDetail() {
   return (
     <div className="page">
       <div className="section-header" style={{ marginTop: 0 }}>
-        <h1 style={{ margin: 0 }}>Order #{order.id}</h1>
+        <h1 style={{ margin: 0 }}>Order #{order.order_no}</h1>
         <span className={`badge badge--${order.status}`}>{order.status}</span>
       </div>
       <p className="muted">
@@ -110,21 +160,22 @@ export default function OrderDetail() {
       )}
 
       <h2 style={{ marginTop: "1.75rem", marginBottom: "0.5rem" }}>Items</h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      <div className="item-grid">
         {order.items?.map((item) => (
-          <div key={item.id} className="card cart-item">
-            <div className="cart-item__thumb">
+          <div key={item.id} className="card item-card">
+            <div className="item-card__image">
               {item.product?.image_url
-                ? <img src={imageUrl(item.product.image_url)} alt={item.product.name} />
-                : "◆"}
+                ? <img src={imageUrl(item.product.image_url)} alt={item.product.name} loading="lazy" />
+                : <span aria-hidden="true">◆</span>}
+              {item.quantity > 1 && <span className="item-tile__qty">×{item.quantity}</span>}
             </div>
-            <div className="cart-item__info">
-              <span className="cart-item__name">{item.product?.name || `Product #${item.product_id}`}</span>
-              <span className="muted">× {item.quantity} @ KES {Number(item.unit_price).toLocaleString()}</span>
+            <div className="item-card__body">
+              <span className="item-card__name">{item.product?.name || "Item"}</span>
+              <span className="muted item-card__meta">
+                {item.quantity} × KES {Number(item.unit_price).toLocaleString()}
+              </span>
+              <strong>KES {(item.unit_price * item.quantity).toLocaleString()}</strong>
             </div>
-            <span className="cart-item__total">
-              KES {(item.unit_price * item.quantity).toLocaleString()}
-            </span>
           </div>
         ))}
       </div>
@@ -141,10 +192,28 @@ export default function OrderDetail() {
         Ships to: {order.shipping_address}
       </p>
 
+      {order.status === "shipped" && (
+        <div className="card" style={{ padding: "1rem 1.1rem", marginTop: "1rem" }}>
+          <p style={{ margin: "0 0 0.75rem" }}>
+            <strong>Has your order arrived?</strong>{" "}
+            <span className="muted">Confirming tells us the vendor delivered — and releases their payment.</span>
+          </p>
+          <button className="btn btn--primary" onClick={confirmReceived} disabled={confirming}>
+            {confirming ? "Confirming..." : "Yes, I received my order"}
+          </button>
+        </div>
+      )}
+
+      {order.status === "pending" && order.checkout_request_id && (
+        <p className="notice" style={{ marginTop: "1rem" }}>
+          A payment prompt was sent to your phone — this page updates automatically once M-Pesa confirms.
+        </p>
+      )}
+
       <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
         {order.status === "pending" && (
           <button className="btn btn--primary" onClick={payNow} disabled={paying}>
-            {paying ? "Check your phone..." : "Pay with M-Pesa"}
+            {paying ? "Check your phone..." : order.checkout_request_id ? "Check payment status" : "Pay with M-Pesa"}
           </button>
         )}
         {["pending", "paid"].includes(order.status) && (

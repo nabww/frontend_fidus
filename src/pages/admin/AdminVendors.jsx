@@ -1,41 +1,41 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import client from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
-import { ADMIN_TABS } from "./AdminOverview";
+import DashboardShell from "../../components/DashboardShell";
+import { ListEmpty, ListSkeleton } from "../../components/ListState";
+import SearchBox from "../../components/SearchBox";
+import useList from "../../hooks/useList";
+import { matches } from "../../utils/format";
 
 export default function AdminVendors() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    client.get("/admin/vendors")
-      .then((res) => setData(res.data))
-      .catch(() => setError("Couldn't load vendors."));
-  }, []);
+  const { data, error } = useList("/admin/vendors");
+  const [query, setQuery] = useState("");
+  const shown = data?.vendors.filter((v) => matches(query, v.name, v.email, v.phone));
 
   return (
-    <div className="page page--wide">
-      <h1>Admin</h1>
-      <DashboardTabs base="/admin" tabs={ADMIN_TABS} />
-      <h2 className="section-title" style={{ marginTop: "1.25rem" }}>
-        Vendors{data ? ` (${data.vendors.length})` : ""}
-      </h2>
-      <p className="muted" style={{ fontSize: "0.85rem", margin: "0 0 0.5rem" }}>
-        Default commission {data?.default_commission_rate}% — a vendor's own rate overrides it.
-      </p>
+    <DashboardShell area="admin">
+      <div className="toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Name, email or phone" />
+        {data && <span className="muted toolbar__count">{shown.length} of {data.vendors.length}</span>}
+      </div>
+      {data && (
+        <p className="muted list-hint" style={{ marginTop: 0 }}>
+          Default commission {data.default_commission_rate}% — a vendor's own rate overrides it.
+        </p>
+      )}
 
       {error && <p className="error-text">{error}</p>}
-      {data?.vendors.length === 0 && <p className="muted">No vendors yet.</p>}
+      {!data && !error && <ListSkeleton />}
+      {shown?.length === 0 && (
+        <ListEmpty query={query.trim()} onClear={() => setQuery("")}>No vendors yet.</ListEmpty>
+      )}
 
       <div className="stack">
-        {data?.vendors.map((v) => (
+        {shown?.map((v) => (
           <Link key={v.id} to={`/admin/vendors/${v.id}`} className="card order-card">
             <div className="order-card__main">
               <strong>{v.name}</strong>
-              <span className="muted">
-                {v.email}
-                {v.phone && ` · ${v.phone}`} · {v.product_count} product{v.product_count === 1 ? "" : "s"}
+              <span className="muted truncate">
+                {v.email}{v.phone && ` · ${v.phone}`} · {v.product_count} product{v.product_count === 1 ? "" : "s"}
                 {v.payout_phone ? " · payout number set" : " · no payout number"}
                 {v.commission_rate != null && ` · ${Number(v.commission_rate)}% commission`}
               </span>
@@ -46,6 +46,6 @@ export default function AdminVendors() {
           </Link>
         ))}
       </div>
-    </div>
+    </DashboardShell>
   );
 }

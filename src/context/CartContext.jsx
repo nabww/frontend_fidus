@@ -8,11 +8,15 @@ export function CartProvider({ children }) {
     return stored ? JSON.parse(stored) : [];
   });
 
+  // Increments on every add — the navbar cart icon keys its bob animation off it
+  const [bump, setBump] = useState(0);
+
   useEffect(() => {
     localStorage.setItem("fidus_cart", JSON.stringify(items));
   }, [items]);
 
   function addToCart(product, quantity = 1) {
+    setBump((b) => b + 1);
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {
@@ -53,7 +57,7 @@ export function CartProvider({ children }) {
   const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, subtotal }}>
+    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, subtotal, bump }}>
       {children}
     </CartContext.Provider>
   );

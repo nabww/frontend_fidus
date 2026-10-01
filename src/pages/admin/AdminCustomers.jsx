@@ -1,18 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import client from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
+import DashboardShell from "../../components/DashboardShell";
+import { ListEmpty, ListSkeleton } from "../../components/ListState";
+import SearchBox from "../../components/SearchBox";
 import { useToast } from "../../context/ToastContext";
-import { ADMIN_TABS } from "./AdminOverview";
+import useList from "../../hooks/useList";
+import { matches, shortDate } from "../../utils/format";
 
 export default function AdminCustomers() {
   const { toast, confirm } = useToast();
-  const [customers, setCustomers] = useState(null);
-  const [error, setError] = useState("");
-
-  const load = () => client.get("/admin/customers")
-    .then((res) => { setCustomers(res.data); setError(""); })
-    .catch(() => setError("Couldn't load customers."));
-  useEffect(() => { load(); }, []);
+  const { data: customers, error, reload } = useList("/admin/customers");
+  const [query, setQuery] = useState("");
 
   async function toggle(c) {
     const ok = await confirm(c.is_active ? {
@@ -28,32 +26,35 @@ export default function AdminCustomers() {
     try {
       await client.put(`/admin/users/${c.id}/active`, { is_active: !c.is_active });
       toast(c.is_active ? "Account disabled" : "Account re-enabled");
-      await load();
+      reload();
     } catch (err) {
       toast(err.response?.data?.message || "Couldn't update the account", { type: "error" });
     }
   }
 
+  const shown = customers?.filter((c) => matches(query, c.name, c.email, c.phone));
+
   return (
-    <div className="page page--wide">
-      <h1>Admin</h1>
-      <DashboardTabs base="/admin" tabs={ADMIN_TABS} />
-      <h2 className="section-title" style={{ marginTop: "1.25rem" }}>
-        Customers{customers ? ` (${customers.length})` : ""}
-      </h2>
+    <DashboardShell area="admin">
+      <div className="toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Name, email or phone" />
+        {customers && <span className="muted toolbar__count">{shown.length} of {customers.length}</span>}
+      </div>
 
       {error && <p className="error-text">{error}</p>}
-      {customers?.length === 0 && <p className="muted">No customers yet.</p>}
+      {!customers && !error && <ListSkeleton />}
+      {shown?.length === 0 && (
+        <ListEmpty query={query.trim()} onClear={() => setQuery("")}>No customers yet.</ListEmpty>
+      )}
 
       <div className="stack">
-        {customers?.map((c) => (
+        {shown?.map((c) => (
           <div key={c.id} className="card order-card">
             <div className="order-card__main">
               <strong>{c.name}</strong>
-              <span className="muted">
-                {c.email}
-                {c.phone && ` · ${c.phone}`} · {c.order_count} order{c.order_count === 1 ? "" : "s"} ·
-                joined {new Date(c.created_at || c.createdAt).toLocaleDateString()}
+              <span className="muted truncate">
+                {c.email}{c.phone && ` · ${c.phone}`} · {c.order_count} order{c.order_count === 1 ? "" : "s"} ·
+                joined {shortDate(c.created_at || c.createdAt)}
               </span>
             </div>
             <span className={`badge ${c.is_active ? "badge--paid" : "badge--cancelled"}`}>
@@ -65,6 +66,6 @@ export default function AdminCustomers() {
           </div>
         ))}
       </div>
-    </div>
+    </DashboardShell>
   );
 }

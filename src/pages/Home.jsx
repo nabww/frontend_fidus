@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import client, { imageUrl } from "../api/client";
 
 function SkeletonCard() {
@@ -29,18 +30,24 @@ export default function Home() {
 
   useEffect(() => {
     setLoading(true);
+    const controller = new AbortController();
     const timer = setTimeout(() => {
-      client.get("/products", { params: { search, category: category || undefined, page, limit: 12 } })
+      client.get("/products", {
+        params: { search, category: category || undefined, page, limit: 12 },
+        signal: controller.signal,
+      })
         .then((res) => {
           setProducts(res.data.data);
           setPages(res.data.pages);
           setTotal(res.data.total);
           setError("");
         })
-        .catch(() => setError("Couldn't load products. Is the API running?"))
-        .finally(() => setLoading(false));
+        .catch((err) => {
+          if (!axios.isCancel(err)) setError("Couldn't load products. Is the API running?");
+        })
+        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     }, 300); // debounce keystrokes
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [search, category, page]);
 
   function pickCategory(c) {
@@ -98,7 +105,7 @@ export default function Home() {
           : products.map((p) => (
               <Link key={p.id} to={`/products/${p.id}`} className="product-card">
                 <div className="product-card__image">
-                  {p.image_url ? <img src={imageUrl(p.image_url)} alt={p.name} /> : "◆"}
+                  {p.image_url ? <img src={imageUrl(p.image_url)} alt={p.name} loading="lazy" /> : "◆"}
                   {p.stock === 0 && <span className="product-card__oos">Out of stock</span>}
                 </div>
                 {p.category && <p className="product-card__cat">{p.category}</p>}

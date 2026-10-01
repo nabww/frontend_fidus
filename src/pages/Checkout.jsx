@@ -22,13 +22,13 @@ export default function Checkout() {
   });
   const [status, setStatus] = useState("idle"); // idle | placing | awaiting-payment | error | paid | failed
   const [message, setMessage] = useState("");
-  const [shipping, setShipping] = useState(null);
-  const [towns, setTowns] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [freeMin, setFreeMin] = useState(0);
 
   useEffect(() => {
     client.get("/config").then((res) => {
-      setShipping(res.data.shippingFlatRate);
-      setTowns(res.data.shippingTowns || []);
+      setZones(res.data.shippingZones || []);
+      setFreeMin(Number(res.data.freeShippingMin) || 0);
     });
   }, []);
 
@@ -38,6 +38,7 @@ export default function Checkout() {
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
       const { data } = await client.get(`/payments/status/${orderId}`);
       if (data.status !== "pending") return data.status;
+      if (data.payment === "failed") return "failed";
     }
     return "pending";
   }
@@ -51,6 +52,7 @@ export default function Checkout() {
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         customer_email: form.customer_email,
         customer_phone: form.customer_phone,
+        town: form.town,
         shipping_address: `${form.town} — ${form.address_detail}`,
       });
 
@@ -67,6 +69,11 @@ export default function Checkout() {
       } else if (result === "cancelled") {
         setStatus("failed");
         setMessage("Payment was cancelled or timed out. You can try again.");
+      } else if (result === "failed") {
+        clearCart();
+        setStatus("failed");
+        setMessage("That payment didn't go through. Your order is saved — retry payment from its page.");
+        setTimeout(() => navigate(`/orders/${order.id}`), 2500);
       } else {
         setStatus("failed");
         setMessage("No confirmation received — you can track the order below.");
@@ -92,6 +99,9 @@ export default function Checkout() {
     );
   }
 
+  const zone = zones.find((z) => z.town === form.town);
+  const freeShip = freeMin > 0 && subtotal >= freeMin;
+  const shipping = !zone ? null : freeShip ? 0 : zone.fee;
   const total = shipping == null ? null : subtotal + shipping;
 
   return (
@@ -108,7 +118,10 @@ export default function Checkout() {
         <aside className="checkout-aside">
           <div className="card summary-card">
             <div className="row"><span className="muted">Subtotal</span><span>KES {subtotal.toLocaleString()}</span></div>
-            <div className="row"><span className="muted">Shipping</span><span>{shipping == null ? "…" : `KES ${shipping}`}</span></div>
+            <div className="row">
+              <span className="muted">Shipping{form.town ? ` · ${form.town}` : ""}</span>
+              <span>{shipping == null ? "Pick a town" : shipping === 0 ? "Free" : `KES ${shipping.toLocaleString()}`}</span>
+            </div>
             <div className="row row--total">
               <span>Total</span><span>{total == null ? "…" : `KES ${total.toLocaleString()}`}</span>
             </div>
@@ -134,8 +147,19 @@ export default function Checkout() {
               <select id="co-town" className="input" required value={form.town}
                 onChange={(e) => setForm({ ...form, town: e.target.value })}>
                 <option value="">Select a town</option>
-                {towns.map((t) => <option key={t} value={t}>{t}</option>)}
+                {zones.map((z) => (
+                  <option key={z.town} value={z.town}>
+                    {z.town}{freeShip || z.fee === 0 ? " — free" : ` — KES ${z.fee.toLocaleString()}`}
+                  </option>
+                ))}
               </select>
+              {freeMin > 0 && (
+                <p className="muted" style={{ margin: "0.35rem 0 0", fontSize: "0.82rem" }}>
+                  {freeShip
+                    ? "Your order qualifies for free delivery."
+                    : `Free delivery on orders over KES ${freeMin.toLocaleString()} — you're KES ${(freeMin - subtotal).toLocaleString()} away.`}
+                </p>
+              )}
             </div>
             <div className="field">
               <label htmlFor="co-address">Address details</label>

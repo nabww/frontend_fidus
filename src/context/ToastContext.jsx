@@ -88,6 +88,9 @@ export function ToastProvider({ children }) {
       {toastState && !dialog && (
         <div className={`feedback-backdrop ${closing ? "is-closing" : ""}`} onClick={dismissToast}>
           <div key={toastState.id} className={`toast toast--${toastState.type}`} role="status" aria-live="polite">
+            <button type="button" className="toast__close" onClick={dismissToast} aria-label="Dismiss">
+              {ICONS.error}
+            </button>
             <span className="toast__icon">{ICONS[toastState.type] || ICONS.info}</span>
             <p className="toast__message">{toastState.message}</p>
           </div>

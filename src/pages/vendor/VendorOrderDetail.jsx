@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import client, { imageUrl } from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
+import DashboardShell from "../../components/DashboardShell";
+import { ListSkeleton } from "../../components/ListState";
 import { useToast } from "../../context/ToastContext";
-import { VENDOR_TABS } from "./VendorOrders";
+import { kes } from "../../utils/format";
 
-const kes = (n) => `KES ${Number(n || 0).toLocaleString()}`;
 const STEPS = ["pending", "paid", "shipped", "delivered"];
 
 export default function VendorOrderDetail() {
@@ -35,7 +35,7 @@ export default function VendorOrderDetail() {
   async function act(nextStatus) {
     if (nextStatus === "cancelled") {
       const ok = await confirm({
-        title: `Cancel order #${order.id}?`,
+        title: `Cancel order #${order.order_no}?`,
         message: "Stock goes back on the shelf. The customer is emailed — a paid order needs a manual M-Pesa refund.",
         confirmLabel: "Cancel order",
         danger: true,
@@ -72,8 +72,9 @@ export default function VendorOrderDetail() {
     }
   }
 
-  if (error) return <div className="page"><p className="error-text">{error}</p></div>;
-  if (!order) return <div className="page"><p className="muted">Loading...</p></div>;
+  const back = <Link to="/vendor/orders" className="back-link">← Orders</Link>;
+  if (error) return <DashboardShell area="vendor" back={back}><p className="error-text">{error}</p></DashboardShell>;
+  if (!order) return <DashboardShell area="vendor" back={back}><ListSkeleton rows={3} /></DashboardShell>;
 
   const myTotal = order.items.reduce((s, i) => s + Number(i.unit_price) * i.quantity, 0);
   const stepIndex = STEPS.indexOf(order.status);
@@ -83,12 +84,9 @@ export default function VendorOrderDetail() {
   const hasTracking = order.courier || order.tracking_number;
 
   return (
-    <div className="page">
-      <Link to="/vendor/orders" className="back-link">← Orders</Link>
-      <DashboardTabs base="/vendor" tabs={VENDOR_TABS} />
-
-      <div className="section-header" style={{ marginTop: "1rem" }}>
-        <h1 style={{ margin: 0 }}>Order #{order.id}</h1>
+    <DashboardShell area="vendor" back={back}>
+      <div className="section-header" style={{ marginTop: 0 }}>
+        <h2 style={{ margin: 0 }}>Order #{order.order_no}</h2>
         <span className={`badge badge--${order.status}`}>{order.status}</span>
       </div>
       <p className="muted" style={{ fontSize: "0.88rem" }}>
@@ -162,7 +160,7 @@ export default function VendorOrderDetail() {
                 : "📦"}
             </div>
             <div className="cart-item__info">
-              <span className="cart-item__name">{i.product?.name || `Product #${i.product_id}`}</span>
+              <span className="cart-item__name">{i.product?.name || "Removed product"}</span>
               <span className="muted">{i.quantity} × {kes(i.unit_price)}</span>
             </div>
             <span className="cart-item__total">{kes(Number(i.unit_price) * i.quantity)}</span>
@@ -227,6 +225,6 @@ export default function VendorOrderDetail() {
           Waiting for the customer's M-Pesa payment — you can act once it's paid.
         </p>
       )}
-    </div>
+    </DashboardShell>
   );
 }

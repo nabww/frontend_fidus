@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import client from "../api/client";
+import ItemTiles from "../components/ItemTiles";
+import { ListEmpty, ListSkeleton } from "../components/ListState";
+import SearchBox from "../components/SearchBox";
+import useList from "../hooks/useList";
+import { kes, matches, shortDate } from "../utils/format";
 
 const STATUS_LABELS = {
   pending: "Awaiting payment",
@@ -9,42 +13,49 @@ const STATUS_LABELS = {
   delivered: "Delivered",
   cancelled: "Cancelled",
 };
+const SEARCH_AFTER = 5; // search only appears once the history is long enough to need it
 
 export default function Orders() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: orders, error } = useList("/orders/mine");
+  const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    client.get("/orders/mine")
-      .then((res) => setOrders(res.data))
-      .catch(() => setError("Couldn't load your orders."))
-      .finally(() => setLoading(false));
-  }, []);
+  const shown = orders?.filter((o) =>
+    matches(query, `#${o.order_no}`, o.status, STATUS_LABELS[o.status], o.items?.map((i) => i.product?.name).join(" ")));
 
   return (
     <div className="page">
       <h1>My orders</h1>
-      {loading && <p className="muted">Loading...</p>}
-      {error && <p className="error-text">{error}</p>}
-      {!loading && !error && orders.length === 0 && (
-        <>
-          <p className="muted">No orders yet.</p>
-          <Link to="/" className="btn btn--ghost" style={{ marginTop: "1rem" }}>Browse products</Link>
-        </>
+      {orders?.length > SEARCH_AFTER && (
+        <div className="toolbar">
+          <SearchBox value={query} onChange={setQuery} placeholder="Order # or product" />
+        </div>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-        {orders.map((o) => (
-          <Link key={o.id} to={`/orders/${o.id}`} className="card order-card">
-            <div className="order-card__main">
-              <strong>Order #{o.id}</strong>
-              <span className="muted">
-                {new Date(o.created_at || o.createdAt).toLocaleDateString()} ·{" "}
-                {o.items?.length || 0} item{o.items?.length === 1 ? "" : "s"}
-              </span>
+      {error && <p className="error-text">{error}</p>}
+      {!orders && !error && <ListSkeleton />}
+      {orders?.length === 0 && (
+        <div className="empty-state" style={{ padding: "2.5rem 0" }}>
+          <p className="muted">No orders yet.</p>
+          <Link to="/" className="btn btn--ghost">Browse products</Link>
+        </div>
+      )}
+      {orders?.length > 0 && shown.length === 0 && (
+        <ListEmpty query={query.trim()} onClear={() => setQuery("")} />
+      )}
+      <div className="stack">
+        {shown?.map((o) => (
+          <Link key={o.id} to={`/orders/${o.id}`} className="card order-tile">
+            <div className="order-card">
+              <div className="order-card__main">
+                <strong>Order #{o.order_no}</strong>
+                <span className="muted truncate">
+                  {shortDate(o.created_at || o.createdAt)} ·{" "}
+                  {o.items?.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
+                </span>
+              </div>
+              <span className={`badge badge--${o.status}`}>{STATUS_LABELS[o.status] || o.status}</span>
+              <span className="order-card__total">{kes(o.total)}</span>
             </div>
-            <span className={`badge badge--${o.status}`}>{STATUS_LABELS[o.status] || o.status}</span>
-            <span className="order-card__total">KES {Number(o.total).toLocaleString()}</span>
+            <ItemTiles items={o.items} />
           </Link>
         ))}
       </div>

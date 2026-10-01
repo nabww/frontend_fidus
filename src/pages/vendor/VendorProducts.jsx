@@ -1,49 +1,46 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import client, { imageUrl } from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
-import { VENDOR_TABS } from "./VendorOrders";
+import { imageUrl } from "../../api/client";
+import DashboardShell from "../../components/DashboardShell";
+import { ListEmpty, ListSkeleton } from "../../components/ListState";
+import SearchBox from "../../components/SearchBox";
+import useDebounced from "../../hooks/useDebounced";
+import useList from "../../hooks/useList";
+import { kes } from "../../utils/format";
 
 export default function VendorProducts() {
-  const [data, setData] = useState(null);
   const [page, setPage] = useState(1);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    client.get("/products/vendor/mine", { params: { page } })
-      .then((res) => { setData(res.data); setError(""); })
-      .catch(() => setError("Couldn't load products."));
-  }, [page]);
-
+  const [query, setQuery] = useState("");
+  const q = useDebounced(query).trim();
+  const { data, loading, error } = useList("/products/vendor/mine", { page, q: q || undefined });
   const products = data?.data || [];
 
   return (
-    <div className="page">
-      <h1>Selling on Fidus</h1>
-      <DashboardTabs base="/vendor" tabs={VENDOR_TABS} />
-
-      <div className="section-header" style={{ marginTop: "1.25rem" }}>
-        <h2>Products{data ? ` (${data.total})` : ""}</h2>
+    <DashboardShell area="vendor">
+      <div className="toolbar">
+        <SearchBox value={query} onChange={(v) => { setQuery(v); setPage(1); }}
+          placeholder="Search your products" />
         <Link to="/vendor/products/new" className="btn btn--primary btn--sm">Add product</Link>
       </div>
 
-      {error && <p className="error-text" style={{ marginTop: "1rem" }}>{error}</p>}
+      {error && <p className="error-text">{error}</p>}
+      {!data && !error && <ListSkeleton />}
       {data && products.length === 0 && (
-        <p className="muted" style={{ marginTop: "1rem" }}>
+        <ListEmpty query={q} onClear={() => setQuery("")}>
           No products yet — add your first one to start selling.
-        </p>
+        </ListEmpty>
       )}
 
-      <div className="stack" style={{ marginTop: "0.5rem" }}>
+      <div className={`stack${loading && data ? " is-loading" : ""}`}>
         {products.map((p) => (
           <Link key={p.id} to={`/vendor/products/${p.id}/edit`} className="card order-card">
-            <div className="cart-item__thumb" style={{ width: 48, height: 48 }}>
+            <div className="thumb">
               {p.image_url ? <img src={imageUrl(p.image_url)} alt="" loading="lazy" /> : "📦"}
             </div>
             <div className="order-card__main">
-              <strong>{p.name}</strong>
+              <strong className="truncate">{p.name}</strong>
               <span className="muted">
-                {p.category || "Uncategorised"} · KES {Number(p.price).toLocaleString()} · {p.stock} in stock
+                {p.category || "Uncategorised"} · {kes(p.price)} · {p.stock} in stock
               </span>
             </div>
             {!p.is_active && <span className="badge badge--cancelled">hidden</span>}
@@ -61,6 +58,6 @@ export default function VendorProducts() {
             onClick={() => setPage(page + 1)}>Next →</button>
         </div>
       )}
-    </div>
+    </DashboardShell>
   );
 }

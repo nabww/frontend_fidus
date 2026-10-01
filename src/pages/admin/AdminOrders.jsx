@@ -1,30 +1,34 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import client from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
+import DashboardShell from "../../components/DashboardShell";
+import FilterChips from "../../components/FilterChips";
+import { ListEmpty, ListSkeleton } from "../../components/ListState";
+import SearchBox from "../../components/SearchBox";
 import { useToast } from "../../context/ToastContext";
-import { ADMIN_TABS } from "./AdminOverview";
+import useDebounced from "../../hooks/useDebounced";
+import useList from "../../hooks/useList";
+import { kes, shortDate } from "../../utils/format";
 
-const kes = (n) => `KES ${Number(n || 0).toLocaleString()}`;
 const FILTERS = ["", "pending", "paid", "shipped", "delivered", "cancelled"];
 const ACTION_LABELS = { shipped: "Mark shipped", delivered: "Mark delivered", cancelled: "Cancel" };
+const EMPTY_TRACKING = { courier: "", tracking_number: "" };
 
 export default function AdminOrders() {
   const { toast, confirm } = useToast();
-  const [orders, setOrders] = useState(null);
   const [status, setStatus] = useState("");
+  const [query, setQuery] = useState("");
+  const q = useDebounced(query).trim();
+  const { data: orders, loading, error, reload } = useList("/admin/orders", {
+    status: status || undefined,
+    q: q || undefined,
+  });
   const [shipForm, setShipForm] = useState(null); // order id with the courier form open
-  const [tracking, setTracking] = useState({ courier: "", tracking_number: "" });
-  const [error, setError] = useState("");
-
-  const load = () => client.get("/admin/orders", { params: status ? { status } : {} })
-    .then((res) => { setOrders(res.data); setError(""); })
-    .catch(() => setError("Couldn't load orders."));
-  useEffect(() => { load(); }, [status]);
+  const [tracking, setTracking] = useState(EMPTY_TRACKING);
 
   async function act(order, nextStatus, extra = {}) {
     if (nextStatus === "cancelled") {
       const ok = await confirm({
-        title: `Cancel order #${order.id}?`,
+        title: `Cancel order #${order.order_no}?`,
         message: "Stock goes back on the shelf and the customer is emailed. A paid order needs a manual M-Pesa refund.",
         confirmLabel: "Cancel order",
         danger: true,
@@ -33,49 +37,42 @@ export default function AdminOrders() {
     }
     try {
       await client.put(`/orders/${order.id}/status`, { status: nextStatus, ...extra });
-      toast(`Order #${order.id} marked ${nextStatus}`);
+      toast(`Order #${order.order_no} marked ${nextStatus}`);
       setShipForm(null);
-      setTracking({ courier: "", tracking_number: "" });
-      await load();
+      setTracking(EMPTY_TRACKING);
+      reload();
     } catch (err) {
       toast(err.response?.data?.message || "Couldn't update the order", { type: "error", duration: 3000 });
     }
   }
 
   return (
-    <div className="page page--wide">
-      <h1>Admin</h1>
-      <DashboardTabs base="/admin" tabs={ADMIN_TABS} />
-
-      <div className="chip-row" style={{ marginTop: "1.25rem" }}>
-        {FILTERS.map((f) => (
-          <button key={f || "all"} className={`chip${status === f ? " chip--active" : ""}`}
-            onClick={() => setStatus(f)}>
-            {f || "All"}
-          </button>
-        ))}
+    <DashboardShell area="admin">
+      <div className="toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Order #, email, phone, receipt, tracking" />
+        <FilterChips options={FILTERS} value={status} onChange={setStatus} />
       </div>
 
-      {error && <p className="error-text" style={{ marginTop: "1rem" }}>{error}</p>}
+      {error && <p className="error-text">{error}</p>}
+      {!orders && !error && <ListSkeleton />}
       {orders?.length === 0 && (
-        <p className="muted" style={{ marginTop: "1.5rem" }}>
-          {status ? `No ${status} orders.` : "No orders yet."}
-        </p>
+        <ListEmpty query={q} filtered={status} onClear={() => { setQuery(""); setStatus(""); }}>
+          No orders yet.
+        </ListEmpty>
       )}
 
-      <div className="stack" style={{ marginTop: "1rem" }}>
+      <div className={`stack${loading && orders ? " is-loading" : ""}`}>
         {orders?.map((o) => (
-          <div key={o.id} className="card" style={{ padding: "0.9rem 1.1rem" }}>
-            <div className="order-card" style={{ padding: 0 }}>
+          <div key={o.id} className="card order-block">
+            <div className="order-card">
               <div className="order-card__main">
-                <strong>#{o.id} · {o.customer?.name || "Customer"}</strong>
-                <span className="muted">
-                  {new Date(o.created_at || o.createdAt).toLocaleString()} ·{" "}
-                  {o.customer?.email} · {o.shipping_address}
+                <strong>#{o.order_no} · {o.customer?.name || "Customer"}</strong>
+                <span className="muted truncate">
+                  {shortDate(o.created_at || o.createdAt)} · {o.customer?.email} · {o.shipping_address}
                 </span>
-                <span className="muted">
-                  {o.items?.map((i) => `${i.quantity}× ${i.product?.name || `#${i.product_id}`}`).join(", ")}
-                  {o.mpesa_receipt && ` · M-Pesa ${o.mpesa_receipt}`}
+                <span className="muted truncate">
+                  {o.items?.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
+                  {o.mpesa_receipt && ` · ${o.mpesa_receipt}`}
                   {o.courier && ` · ${o.courier}${o.tracking_number ? ` ${o.tracking_number}` : ""}`}
                 </span>
               </div>
@@ -98,14 +95,14 @@ export default function AdminOrders() {
 
             {/* Admin ships on behalf of a vendor — same courier/tracking capture */}
             {shipForm === o.id && (
-              <form style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.75rem", alignItems: "flex-end" }}
+              <form className="inline-form"
                 onSubmit={(e) => { e.preventDefault(); act(o, "shipped", tracking); }}>
-                <div className="field" style={{ flex: 1, minWidth: 140 }}>
+                <div className="field">
                   <label>Courier</label>
                   <input className="input" placeholder="e.g. Fargo, G4S" value={tracking.courier}
                     onChange={(e) => setTracking({ ...tracking, courier: e.target.value })} />
                 </div>
-                <div className="field" style={{ flex: 1, minWidth: 140 }}>
+                <div className="field">
                   <label>Tracking number</label>
                   <input className="input" placeholder="Optional" value={tracking.tracking_number}
                     onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })} />
@@ -116,6 +113,7 @@ export default function AdminOrders() {
           </div>
         ))}
       </div>
-    </div>
+      {orders?.length >= 200 && <p className="muted list-hint">Showing the latest 200 — search to narrow down.</p>}
+    </DashboardShell>
   );
 }

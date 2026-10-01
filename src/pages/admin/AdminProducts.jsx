@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import client, { imageUrl } from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
+import DashboardShell from "../../components/DashboardShell";
+import FilterChips from "../../components/FilterChips";
+import { ListEmpty, ListSkeleton } from "../../components/ListState";
+import SearchBox from "../../components/SearchBox";
 import { useToast } from "../../context/ToastContext";
-import { ADMIN_TABS } from "./AdminOverview";
+import useDebounced from "../../hooks/useDebounced";
+import useList from "../../hooks/useList";
+import { kes } from "../../utils/format";
 
-const kes = (n) => `KES ${Number(n || 0).toLocaleString()}`;
 const FILTERS = [
   { value: "", label: "All" },
   { value: "true", label: "Live" },
@@ -13,17 +17,16 @@ const FILTERS = [
 
 export default function AdminProducts() {
   const { toast, confirm } = useToast();
-  const [products, setProducts] = useState(null);
   const [active, setActive] = useState("");
+  const [query, setQuery] = useState("");
+  const q = useDebounced(query).trim();
+  const { data: products, loading, error, reload } = useList("/admin/products", {
+    active: active || undefined,
+    q: q || undefined,
+  });
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  const load = () => client.get("/admin/products", { params: active ? { active } : {} })
-    .then((res) => { setProducts(res.data); setError(""); })
-    .catch(() => setError("Couldn't load products."));
-  useEffect(() => { load(); }, [active]);
 
   function openEdit(p) {
     setEditId(p.id);
@@ -37,7 +40,7 @@ export default function AdminProducts() {
       await client.put(`/admin/products/${editId}`, form);
       toast("Product updated");
       setEditId(null);
-      await load();
+      reload();
     } catch (err) {
       toast(err.response?.data?.message || "Couldn't save changes", { type: "error" });
     } finally {
@@ -58,39 +61,37 @@ export default function AdminProducts() {
     try {
       await client.put(`/admin/products/${p.id}/active`, { is_active: !p.is_active });
       toast(p.is_active ? "Product hidden" : "Product restored");
-      await load();
+      reload();
     } catch (err) {
       toast(err.response?.data?.message || "Couldn't update the product", { type: "error" });
     }
   }
 
   return (
-    <div className="page page--wide">
-      <h1>Admin</h1>
-      <DashboardTabs base="/admin" tabs={ADMIN_TABS} />
-
-      <div className="chip-row" style={{ marginTop: "1.25rem" }}>
-        {FILTERS.map((f) => (
-          <button key={f.value || "all"} className={`chip${active === f.value ? " chip--active" : ""}`}
-            onClick={() => setActive(f.value)}>
-            {f.label}
-          </button>
-        ))}
+    <DashboardShell area="admin">
+      <div className="toolbar">
+        <SearchBox value={query} onChange={setQuery} placeholder="Product, category or vendor" />
+        <FilterChips options={FILTERS} value={active} onChange={setActive} />
       </div>
 
-      {error && <p className="error-text" style={{ marginTop: "1rem" }}>{error}</p>}
-      {products?.length === 0 && <p className="muted" style={{ marginTop: "1.5rem" }}>No products.</p>}
+      {error && <p className="error-text">{error}</p>}
+      {!products && !error && <ListSkeleton />}
+      {products?.length === 0 && (
+        <ListEmpty query={q} filtered={active} onClear={() => { setQuery(""); setActive(""); }}>
+          No products yet.
+        </ListEmpty>
+      )}
 
-      <div className="stack" style={{ marginTop: "1rem" }}>
+      <div className={`stack${loading && products ? " is-loading" : ""}`}>
         {products?.map((p) => (
-          <div key={p.id} className="card" style={{ padding: "0.9rem 1.1rem" }}>
-            <div className="order-card" style={{ padding: 0 }}>
-              <div className="cart-item__thumb" style={{ width: 48, height: 48 }}>
+          <div key={p.id} className="card order-block">
+            <div className="order-card">
+              <div className="thumb">
                 {p.image_url ? <img src={imageUrl(p.image_url)} alt="" loading="lazy" /> : "📦"}
               </div>
               <div className="order-card__main">
-                <strong>{p.name}</strong>
-                <span className="muted">
+                <strong className="truncate">{p.name}</strong>
+                <span className="muted truncate">
                   {p.vendor?.name} · {p.category || "Uncategorised"} · {kes(p.price)} · {p.stock} in stock
                 </span>
               </div>
@@ -111,24 +112,23 @@ export default function AdminProducts() {
 
             {/* Quick fixes for a vendor who can't be reached */}
             {editId === p.id && (
-              <form style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.75rem", alignItems: "flex-end" }}
-                onSubmit={save}>
-                <div className="field" style={{ flex: 2, minWidth: 160 }}>
+              <form className="inline-form" onSubmit={save}>
+                <div className="field field--grow">
                   <label>Name</label>
                   <input className="input" value={form.name} required
                     onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </div>
-                <div className="field" style={{ flex: 1, minWidth: 110 }}>
+                <div className="field">
                   <label>Price (KES)</label>
                   <input className="input" type="number" min="0" step="0.01" value={form.price} required
                     onChange={(e) => setForm({ ...form, price: e.target.value })} />
                 </div>
-                <div className="field" style={{ flex: 1, minWidth: 90 }}>
+                <div className="field">
                   <label>Stock</label>
                   <input className="input" type="number" min="0" step="1" value={form.stock} required
                     onChange={(e) => setForm({ ...form, stock: e.target.value })} />
                 </div>
-                <div className="field" style={{ flex: 1, minWidth: 120 }}>
+                <div className="field">
                   <label>Category</label>
                   <input className="input" value={form.category}
                     onChange={(e) => setForm({ ...form, category: e.target.value })} />
@@ -141,6 +141,7 @@ export default function AdminProducts() {
           </div>
         ))}
       </div>
-    </div>
+      {products?.length >= 500 && <p className="muted list-hint">Showing the latest 500 — search to narrow down.</p>}
+    </DashboardShell>
   );
 }

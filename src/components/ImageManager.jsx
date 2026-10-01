@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { imageUrl } from "../api/client";
 import { useToast } from "../context/ToastContext";
-import { TrashIcon } from "./Icons";
+import { CameraIcon, TrashIcon } from "./Icons";
+import shrinkImage from "../utils/shrinkImage";
 
 export const MAX_IMAGES = 8;
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -16,7 +17,9 @@ export function existingEntries(urls) {
 export default function ImageManager({ value, onChange }) {
   const { toast } = useToast();
   const fileInput = useRef(null);
+  const cameraInput = useRef(null);
   const [urlDraft, setUrlDraft] = useState("");
+  const [processing, setProcessing] = useState(false);
   const remaining = MAX_IMAGES - value.length;
 
   // Free object URLs for previews when entries go away
@@ -28,12 +31,19 @@ export default function ImageManager({ value, onChange }) {
   }, [value]);
   useEffect(() => () => previews.current.forEach((p) => URL.revokeObjectURL(p)), []);
 
-  function addFiles(fileList) {
-    const files = [...fileList];
-    const valid = files.filter((f) => f.type.startsWith("image/") && f.size <= MAX_BYTES);
-    if (valid.length < files.length) toast("Some files were skipped — images only, up to 5MB each", { type: "error" });
-    if (valid.length > remaining) toast(`Only ${MAX_IMAGES} images per product`, { type: "error" });
-    const added = valid.slice(0, Math.max(0, remaining)).map((file) => ({
+  async function addFiles(fileList) {
+    const images = [...fileList].filter((f) => f.type.startsWith("image/"));
+    const picked = images.slice(0, Math.max(0, remaining));
+    if (images.length < fileList.length) toast("Some files were skipped — images only", { type: "error" });
+    else if (picked.length < images.length) toast(`Only ${MAX_IMAGES} images per product`, { type: "error" });
+    if (!picked.length) return;
+
+    setProcessing(true);
+    const files = await Promise.all(picked.map(shrinkImage)); // big phone photos → ≤1600px JPEG
+    setProcessing(false);
+    const valid = files.filter((f) => f.size <= MAX_BYTES);
+    if (valid.length < files.length) toast("Some images were over 5MB and skipped", { type: "error" });
+    const added = valid.map((file) => ({
       key: `n${keySeq++}`, kind: "new", file, preview: URL.createObjectURL(file),
     }));
     if (added.length) onChange([...value, ...added]);
@@ -84,14 +94,25 @@ export default function ImageManager({ value, onChange }) {
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); if (remaining > 0) addFiles(e.dataTransfer.files); }}
       >
-        <button type="button" className="btn btn--ghost" disabled={remaining <= 0}
-          onClick={() => fileInput.current?.click()}>
-          {value.length ? "Add more images" : "Add images"}
-        </button>
+        <div className="image-drop__buttons">
+          {/* capture="environment" opens the rear camera directly on phones */}
+          <button type="button" className="btn btn--primary touch-only" disabled={remaining <= 0 || processing}
+            onClick={() => cameraInput.current?.click()}>
+            <CameraIcon /> Take photo
+          </button>
+          <button type="button" className="btn btn--ghost" disabled={remaining <= 0 || processing}
+            onClick={() => fileInput.current?.click()}>
+            {processing ? "Preparing…" : value.length ? "Add more images" : "Add images"}
+          </button>
+        </div>
         <span className="muted">
-          {remaining > 0 ? `or drop them here · ${remaining} of ${MAX_IMAGES} left · 5MB max each` : `${MAX_IMAGES} image limit reached`}
+          {remaining > 0
+            ? <><span className="hide-touch">or drop them here · </span>{remaining} of {MAX_IMAGES} left</>
+            : `${MAX_IMAGES} image limit reached`}
         </span>
         <input ref={fileInput} type="file" accept="image/*" multiple hidden
+          onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+        <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden
           onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
       </div>
 

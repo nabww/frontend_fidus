@@ -22,6 +22,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminPayouts from "./pages/admin/AdminPayouts";
+import AdminShipping from "./pages/admin/AdminShipping";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -78,6 +79,9 @@ export default function App() {
         } />
         <Route path="/admin/products" element={
           <ProtectedRoute role="admin"><AdminProducts /></ProtectedRoute>
+        } />
+        <Route path="/admin/delivery" element={
+          <ProtectedRoute role="admin"><AdminShipping /></ProtectedRoute>
         } />
         <Route path="/admin/payouts" element={
           <ProtectedRoute role="admin"><AdminPayouts /></ProtectedRoute>

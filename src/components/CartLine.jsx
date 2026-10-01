@@ -18,7 +18,7 @@ export default function CartLine({ item, disabled = false }) {
   return (
     <div className="card cart-item">
       <Link to={`/products/${item.productId}`} className="cart-item__thumb">
-        {item.image_url ? <img src={imageUrl(item.image_url)} alt={item.name} /> : "◆"}
+        {item.image_url ? <img src={imageUrl(item.image_url)} alt={item.name} loading="lazy" /> : "◆"}
       </Link>
       <div className="cart-item__info">
         <Link to={`/products/${item.productId}`} className="cart-item__name">{item.name}</Link>

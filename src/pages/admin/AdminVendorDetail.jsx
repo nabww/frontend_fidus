@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import client, { imageUrl } from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
+import DashboardShell from "../../components/DashboardShell";
+import { ListEmpty, ListSkeleton } from "../../components/ListState";
+import SearchBox from "../../components/SearchBox";
 import { useToast } from "../../context/ToastContext";
-import { ADMIN_TABS } from "./AdminOverview";
+import { kes, matches } from "../../utils/format";
+
+const SEARCH_AFTER = 6; // product search only appears once the list is long enough to need it
 
 export default function AdminVendorDetail() {
   const { id } = useParams();
@@ -13,6 +17,7 @@ export default function AdminVendorDetail() {
   const [defaultRate, setDefaultRate] = useState(10);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState("");
 
   const load = () => Promise.all([
     client.get(`/admin/vendors/${id}`),
@@ -93,22 +98,23 @@ export default function AdminVendorDetail() {
     }
   }
 
-  if (error) return <div className="page"><p className="error-text">{error}</p></div>;
-  if (!vendor || !form) return <div className="page"><p className="muted">Loading...</p></div>;
+  const back = <Link to="/admin/vendors" className="back-link">← Vendors</Link>;
+  if (error) return <DashboardShell area="admin" back={back}><p className="error-text">{error}</p></DashboardShell>;
+  if (!vendor || !form) return <DashboardShell area="admin" back={back}><ListSkeleton rows={3} /></DashboardShell>;
+
+  const products = vendor.products || [];
+  const shown = products.filter((p) => matches(query, p.name, p.category));
 
   return (
-    <div className="page">
-      <Link to="/admin/vendors" className="back-link">← Vendors</Link>
-      <DashboardTabs base="/admin" tabs={ADMIN_TABS} />
-
-      <div className="section-header" style={{ marginTop: "1rem" }}>
-        <h1 style={{ margin: 0 }}>{vendor.name}</h1>
+    <DashboardShell area="admin" back={back}>
+      <div className="section-header" style={{ marginTop: 0 }}>
+        <h2 style={{ margin: 0 }}>{vendor.name}</h2>
         <span className={`badge ${vendor.is_active ? "badge--paid" : "badge--cancelled"}`}>
           {vendor.is_active ? "active" : "disabled"}
         </span>
       </div>
 
-      <form className="form form--full card" style={{ padding: "1.25rem", marginTop: "1rem", maxWidth: 520 }} onSubmit={save}>
+      <form className="form form--full card vendor-form" onSubmit={save}>
         <div className="field">
           <label htmlFor="v-name">Name</label>
           <input id="v-name" className="input" value={form.name} onChange={set("name")} required />
@@ -133,7 +139,7 @@ export default function AdminVendorDetail() {
             style={{ maxWidth: 140 }} value={form.commission_rate} onChange={set("commission_rate")}
             placeholder={String(defaultRate)} />
         </div>
-        <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.25rem" }}>
+        <div className="btn-row">
           <button className="btn btn--primary" type="submit" disabled={busy}>
             {busy ? "Saving..." : "Save changes"}
           </button>
@@ -144,21 +150,29 @@ export default function AdminVendorDetail() {
         </div>
       </form>
 
-      <h2 className="section-title" style={{ marginTop: "1.75rem" }}>
-        Products ({vendor.products?.length || 0})
-      </h2>
-      {vendor.products?.length === 0 && <p className="muted" style={{ fontSize: "0.9rem" }}>No products.</p>}
-      <div className="stack">
-        {vendor.products?.map((p) => (
+
+      <div className="section-header">
+        <h2 style={{ margin: 0 }}>Products ({products.length})</h2>
+      </div>
+      {products.length > SEARCH_AFTER && (
+        <div className="toolbar" style={{ marginTop: "0.75rem" }}>
+          <SearchBox value={query} onChange={setQuery} placeholder="Product or category" />
+          <span className="muted toolbar__count">{shown.length} of {products.length}</span>
+        </div>
+      )}
+      <div className="stack" style={{ marginTop: "0.75rem" }}>
+        {products.length === 0 && <ListEmpty>No products.</ListEmpty>}
+        {products.length > 0 && shown.length === 0 && (
+          <ListEmpty query={query.trim()} onClear={() => setQuery("")} />
+        )}
+        {shown.map((p) => (
           <div key={p.id} className="card order-card">
-            <div className="cart-item__thumb" style={{ width: 48, height: 48 }}>
+            <div className="thumb">
               {p.image_url ? <img src={imageUrl(p.image_url)} alt="" loading="lazy" /> : "📦"}
             </div>
             <div className="order-card__main">
-              <strong>{p.name}</strong>
-              <span className="muted">
-                KES {Number(p.price).toLocaleString()} · {p.stock} in stock
-              </span>
+              <strong className="truncate">{p.name}</strong>
+              <span className="muted">{kes(p.price)} · {p.stock} in stock</span>
             </div>
             <span className={`badge ${p.is_active ? "badge--paid" : "badge--cancelled"}`}>
               {p.is_active ? "live" : "hidden"}
@@ -169,6 +183,6 @@ export default function AdminVendorDetail() {
           </div>
         ))}
       </div>
-    </div>
+    </DashboardShell>
   );
 }

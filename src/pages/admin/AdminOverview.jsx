@@ -1,33 +1,15 @@
-import { useEffect, useState } from "react";
-import client from "../../api/client";
-import DashboardTabs from "../../components/DashboardTabs";
-
-const kes = (n) => `KES ${Number(n || 0).toLocaleString()}`;
-
-export const ADMIN_TABS = [
-  { to: "", label: "Overview" },
-  { to: "/vendors", label: "Vendors" },
-  { to: "/customers", label: "Customers" },
-  { to: "/orders", label: "Orders" },
-  { to: "/products", label: "Products" },
-  { to: "/payouts", label: "Payouts" },
-];
+import DashboardShell from "../../components/DashboardShell";
+import { ListSkeleton } from "../../components/ListState";
+import useList from "../../hooks/useList";
+import { kes } from "../../utils/format";
 
 export default function AdminOverview() {
-  const [stats, setStats] = useState(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    client.get("/admin/stats")
-      .then((res) => setStats(res.data))
-      .catch(() => setError("Couldn't load stats."));
-  }, []);
+  const { data: stats, error } = useList("/admin/stats");
 
   return (
-    <div className="page page--wide">
-      <h1>Admin</h1>
-      <DashboardTabs base="/admin" tabs={ADMIN_TABS} />
-      {error && <p className="error-text" style={{ marginTop: "1rem" }}>{error}</p>}
+    <DashboardShell area="admin">
+      {error && <p className="error-text">{error}</p>}
+      {!stats && !error && <ListSkeleton rows={3} />}
 
       {stats && (
         <>
@@ -58,6 +40,6 @@ export default function AdminOverview() {
           </div>
         </>
       )}
-    </div>
+    </DashboardShell>
   );
 }
