@@ -45,26 +45,47 @@ export default function Help() {
         Answers to common questions, and how to reach us if you need a hand.
       </p>
 
-      <h2 className="section-title" style={{ marginTop: "1.75rem" }}>Contact us</h2>
+      <h2 className="section-title" style={{ marginTop: "1.75rem" }}>
+        Contact us
+      </h2>
       <div className="contact-grid">
         <a className="card contact-card" href={`mailto:${SUPPORT.email}`} aria-label="Email us">
-          <span className="contact-card__icon"><MailIcon /></span>
+          <span className="contact-card__icon">
+            <MailIcon />
+          </span>
           <strong>{SUPPORT.email}</strong>
         </a>
-        <a className="card contact-card" href={`tel:${SUPPORT.phone.replace(/\s/g, "")}`} aria-label="Call us">
-          <span className="contact-card__icon"><PhoneIcon /></span>
+        <a
+          className="card contact-card"
+          href={`tel:${SUPPORT.phone.replace(/\s/g, "")}`}
+          aria-label="Call us"
+        >
+          <span className="contact-card__icon">
+            <PhoneIcon />
+          </span>
           <strong>{SUPPORT.phone}</strong>
         </a>
-        <a className="card contact-card" href={`https://wa.me/${SUPPORT.whatsapp}`} target="_blank" rel="noreferrer" aria-label="Chat with us on WhatsApp">
-          <span className="contact-card__icon"><ChatIcon /></span>
+        <a
+          className="card contact-card"
+          href={`https://wa.me/${SUPPORT.whatsapp}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Chat with us on WhatsApp"
+        >
+          <span className="contact-card__icon">
+            <ChatIcon />
+          </span>
           <strong>Chat with us</strong>
         </a>
       </div>
       <p className="muted" style={{ fontSize: "0.85rem", margin: "0.75rem 0 0" }}>
-        We're available {SUPPORT.hours}. For an order, include its number (e.g. Order #12) so we can help faster.
+        We're available {SUPPORT.hours}. For an order, include its number (e.g. Order #12) so we can
+        help faster.
       </p>
 
-      <h2 className="section-title" style={{ marginTop: "2rem" }}>Frequently asked questions</h2>
+      <h2 className="section-title" style={{ marginTop: "2rem" }}>
+        Frequently asked questions
+      </h2>
       <div className="faq">
         {FAQ.map(({ q, a }) => (
           <details key={q} className="faq__item">
@@ -75,7 +96,10 @@ export default function Help() {
       </div>
 
       <p className="muted" style={{ marginTop: "1.5rem", fontSize: "0.9rem" }}>
-        Looking for an order? <Link to="/orders" style={{ color: "var(--accent)" }}>Go to My orders</Link>
+        Looking for an order?{" "}
+        <Link to="/orders" style={{ color: "var(--accent)" }}>
+          Go to My orders
+        </Link>
       </p>
     </div>
   );

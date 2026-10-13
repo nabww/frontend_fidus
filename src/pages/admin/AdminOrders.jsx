@@ -18,7 +18,12 @@ export default function AdminOrders() {
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const q = useDebounced(query).trim();
-  const { data: orders, loading, error, reload } = useList("/admin/orders", {
+  const {
+    data: orders,
+    loading,
+    error,
+    reload,
+  } = useList("/admin/orders", {
     status: status === "refund due" ? undefined : status || undefined,
     refund: status === "refund due" ? "due" : undefined,
     q: q || undefined,
@@ -45,7 +50,8 @@ export default function AdminOrders() {
     if (nextStatus === "cancelled") {
       const ok = await confirm({
         title: `Cancel order #${order.order_no}?`,
-        message: "Stock goes back on the shelf and the customer is emailed. A paid order needs a manual M-Pesa refund.",
+        message:
+          "Stock goes back on the shelf and the customer is emailed. A paid order needs a manual M-Pesa refund.",
         confirmLabel: "Cancel order",
         danger: true,
       });
@@ -58,21 +64,35 @@ export default function AdminOrders() {
       setTracking(EMPTY_TRACKING);
       reload();
     } catch (err) {
-      toast(err.response?.data?.message || "Couldn't update the order", { type: "error", duration: 3000 });
+      toast(err.response?.data?.message || "Couldn't update the order", {
+        type: "error",
+        duration: 3000,
+      });
     }
   }
 
   return (
     <DashboardShell area="admin">
       <div className="toolbar">
-        <SearchBox value={query} onChange={setQuery} placeholder="Order #, email, phone, receipt, tracking" />
+        <SearchBox
+          value={query}
+          onChange={setQuery}
+          placeholder="Order #, email, phone, receipt, tracking"
+        />
         <FilterChips options={FILTERS} value={status} onChange={setStatus} />
       </div>
 
       {error && <p className="error-text">{error}</p>}
       {!orders && !error && <ListSkeleton />}
       {orders?.length === 0 && (
-        <ListEmpty query={q} filtered={status} onClear={() => { setQuery(""); setStatus(""); }}>
+        <ListEmpty
+          query={q}
+          filtered={status}
+          onClear={() => {
+            setQuery("");
+            setStatus("");
+          }}
+        >
           No orders yet.
         </ListEmpty>
       )}
@@ -82,14 +102,18 @@ export default function AdminOrders() {
           <div key={o.id} className="card order-block">
             <div className="order-card">
               <div className="order-card__main">
-                <strong>#{o.order_no} · {o.customer?.name || "Customer"}</strong>
+                <strong>
+                  #{o.order_no} · {o.customer?.name || "Customer"}
+                </strong>
                 <span className="muted truncate">
-                  {shortDate(o.created_at || o.createdAt)} · {o.customer?.email} · {o.fulfillment_type === "pickup" ? "Pickup" : o.shipping_address}
+                  {shortDate(o.created_at || o.createdAt)} · {o.customer?.email} ·{" "}
+                  {o.fulfillment_type === "pickup" ? "Pickup" : o.shipping_address}
                 </span>
                 <span className="muted truncate">
                   {o.items?.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
                   {o.mpesa_receipt && ` · ${o.mpesa_receipt}`}
-                  {o.courier && ` · ${o.courier}${o.tracking_number ? ` ${o.tracking_number}` : ""}`}
+                  {o.courier &&
+                    ` · ${o.courier}${o.tracking_number ? ` ${o.tracking_number}` : ""}`}
                 </span>
               </div>
               {o.fulfillment_type === "pickup" && <span className="badge badge--info">pickup</span>}
@@ -100,11 +124,13 @@ export default function AdminOrders() {
               {o.allowed?.length > 0 && (
                 <div className="order-card__actions">
                   {o.allowed.map((s) => (
-                    <button key={s}
+                    <button
+                      key={s}
                       className={`btn btn--sm ${s === "cancelled" ? "btn--ghost" : "btn--primary"}`}
-                      onClick={() => s === "shipped"
-                        ? setShipForm(shipForm === o.id ? null : o.id)
-                        : act(o, s)}>
+                      onClick={() =>
+                        s === "shipped" ? setShipForm(shipForm === o.id ? null : o.id) : act(o, s)
+                      }
+                    >
                       {ACTION_LABELS[s]}
                     </button>
                   ))}
@@ -112,8 +138,10 @@ export default function AdminOrders() {
               )}
               {o.refund_status === "due" && (
                 <div className="order-card__actions">
-                  <button className="btn btn--sm btn--primary"
-                    onClick={() => setRefundForm(refundForm === o.id ? null : o.id)}>
+                  <button
+                    className="btn btn--sm btn--primary"
+                    onClick={() => setRefundForm(refundForm === o.id ? null : o.id)}
+                  >
                     Mark refunded
                   </button>
                 </div>
@@ -122,38 +150,67 @@ export default function AdminOrders() {
 
             {/* Records the manual M-Pesa reversal reference */}
             {refundForm === o.id && (
-              <form className="inline-form"
-                onSubmit={(e) => { e.preventDefault(); markRefunded(o); }}>
+              <form
+                className="inline-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  markRefunded(o);
+                }}
+              >
                 <div className="field">
                   <label>M-Pesa reversal reference</label>
-                  <input className="input" placeholder="e.g. QJX7A2B3CD" value={refundRef}
-                    onChange={(e) => setRefundRef(e.target.value)} required />
+                  <input
+                    className="input"
+                    placeholder="e.g. QJX7A2B3CD"
+                    value={refundRef}
+                    onChange={(e) => setRefundRef(e.target.value)}
+                    required
+                  />
                 </div>
-                <button className="btn btn--primary btn--sm" type="submit">Confirm refunded</button>
+                <button className="btn btn--primary btn--sm" type="submit">
+                  Confirm refunded
+                </button>
               </form>
             )}
 
             {/* Admin ships on behalf of a vendor — same courier/tracking capture */}
             {shipForm === o.id && (
-              <form className="inline-form"
-                onSubmit={(e) => { e.preventDefault(); act(o, "shipped", tracking); }}>
+              <form
+                className="inline-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  act(o, "shipped", tracking);
+                }}
+              >
                 <div className="field">
                   <label>Courier</label>
-                  <input className="input" placeholder="e.g. Fargo, G4S" value={tracking.courier}
-                    onChange={(e) => setTracking({ ...tracking, courier: e.target.value })} />
+                  <input
+                    className="input"
+                    placeholder="e.g. Fargo, G4S"
+                    value={tracking.courier}
+                    onChange={(e) => setTracking({ ...tracking, courier: e.target.value })}
+                  />
                 </div>
                 <div className="field">
                   <label>Tracking number</label>
-                  <input className="input" placeholder="Optional" value={tracking.tracking_number}
-                    onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })} />
+                  <input
+                    className="input"
+                    placeholder="Optional"
+                    value={tracking.tracking_number}
+                    onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })}
+                  />
                 </div>
-                <button className="btn btn--primary btn--sm" type="submit">Confirm shipped</button>
+                <button className="btn btn--primary btn--sm" type="submit">
+                  Confirm shipped
+                </button>
               </form>
             )}
           </div>
         ))}
       </div>
-      {orders?.length >= 200 && <p className="muted list-hint">Showing the latest 200 — search to narrow down.</p>}
+      {orders?.length >= 200 && (
+        <p className="muted list-hint">Showing the latest 200 — search to narrow down.</p>
+      )}
     </DashboardShell>
   );
 }

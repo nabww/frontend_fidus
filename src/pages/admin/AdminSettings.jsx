@@ -6,19 +6,57 @@ import { useToast } from "../../context/ToastContext";
 // M-Pesa configuration fields the admin can edit at runtime.
 // Plain fields are shown as-is; secret fields are masked on load.
 const FIELDS = [
-  { key: "mpesa_env", label: "Environment", type: "select", options: ["sandbox", "production"], group: "general" },
+  {
+    key: "mpesa_env",
+    label: "Environment",
+    type: "select",
+    options: ["sandbox", "production"],
+    group: "general",
+  },
   { key: "mpesa_shortcode", label: "STK Shortcode", placeholder: "174379", group: "general" },
-  { key: "mpesa_transaction_type", label: "Collection Type", type: "select", options: ["CustomerPayBillOnline", "CustomerBuyGoodsOnline"], group: "general" },
-  { key: "mpesa_till_number", label: "Till Number", placeholder: "Only for Buy Goods collections", group: "general" },
+  {
+    key: "mpesa_transaction_type",
+    label: "Collection Type",
+    type: "select",
+    options: ["CustomerPayBillOnline", "CustomerBuyGoodsOnline"],
+    group: "general",
+  },
+  {
+    key: "mpesa_till_number",
+    label: "Till Number",
+    placeholder: "Only for Buy Goods collections",
+    group: "general",
+  },
   { key: "mpesa_b2c_shortcode", label: "B2C Shortcode", placeholder: "600992", group: "general" },
   { key: "mpesa_consumer_key", label: "Consumer Key", secret: true, group: "auth" },
   { key: "mpesa_consumer_secret", label: "Consumer Secret", secret: true, group: "auth" },
   { key: "mpesa_passkey", label: "STK Passkey", secret: true, group: "auth" },
   { key: "mpesa_initiator_name", label: "Initiator Name", placeholder: "testapi", group: "b2c" },
-  { key: "mpesa_stk_callback_url", label: "STK Callback URL", placeholder: "https://your-domain/api/payments/stk-callback", group: "callbacks" },
-  { key: "mpesa_b2c_callback_url", label: "B2C Callback URL", placeholder: "https://your-domain/api/payments/b2c-callback", group: "callbacks" },
-  { key: "mpesa_b2c_timeout_url", label: "B2C Timeout URL", placeholder: "auto-derived if empty", group: "callbacks" },
-  { key: "mpesa_callback_secret", label: "Callback Secret", secret: true, placeholder: "Required in production", group: "callbacks" },
+  {
+    key: "mpesa_stk_callback_url",
+    label: "STK Callback URL",
+    placeholder: "https://your-domain/api/payments/stk-callback",
+    group: "callbacks",
+  },
+  {
+    key: "mpesa_b2c_callback_url",
+    label: "B2C Callback URL",
+    placeholder: "https://your-domain/api/payments/b2c-callback",
+    group: "callbacks",
+  },
+  {
+    key: "mpesa_b2c_timeout_url",
+    label: "B2C Timeout URL",
+    placeholder: "auto-derived if empty",
+    group: "callbacks",
+  },
+  {
+    key: "mpesa_callback_secret",
+    label: "Callback Secret",
+    secret: true,
+    placeholder: "Required in production",
+    group: "callbacks",
+  },
 ];
 
 const GROUPS = [
@@ -31,7 +69,7 @@ const GROUPS = [
 export default function AdminSettings() {
   const { toast } = useToast();
   const [form, setForm] = useState({});
-  const [meta, setMeta] = useState({});     // _set flags, _env_fallbacks
+  const [meta, setMeta] = useState({}); // _set flags, _env_fallbacks
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [genBusy, setGenBusy] = useState(false);
@@ -41,7 +79,13 @@ export default function AdminSettings() {
   const [passShipping, setPassShipping] = useState(false);
   const [posSaving, setPosSaving] = useState(false);
   // SMTP
-  const [smtp, setSmtp] = useState({ smtp_host: "", smtp_port: "587", smtp_user: "", smtp_pass: "", smtp_from: "" });
+  const [smtp, setSmtp] = useState({
+    smtp_host: "",
+    smtp_port: "587",
+    smtp_user: "",
+    smtp_pass: "",
+    smtp_from: "",
+  });
   const [smtpMeta, setSmtpMeta] = useState({});
   const [smtpDirty, setSmtpDirty] = useState({});
   const [smtpSaving, setSmtpSaving] = useState(false);
@@ -80,7 +124,9 @@ export default function AdminSettings() {
     }
   }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChange(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -123,7 +169,9 @@ export default function AdminSettings() {
     }
     setGenBusy(true);
     try {
-      const { data } = await client.post("/admin/settings/mpesa/generate-credential", { password: initPassword });
+      const { data } = await client.post("/admin/settings/mpesa/generate-credential", {
+        password: initPassword,
+      });
       toast(data.message || "Credential generated", { type: "success" });
       setInitPassword("");
       load();
@@ -206,8 +254,8 @@ export default function AdminSettings() {
         <div className="settings-header">
           <h2 className="section-title">M-Pesa Configuration</h2>
           <p className="muted" style={{ margin: "0.25rem 0 1rem" }}>
-            Update credentials and callback URLs without restarting the server.
-            Secret values are encrypted at rest. Fields left blank fall back to <code>.env</code>.
+            Update credentials and callback URLs without restarting the server. Secret values are
+            encrypted at rest. Fields left blank fall back to <code>.env</code>.
           </p>
         </div>
 
@@ -222,9 +270,15 @@ export default function AdminSettings() {
                   <div key={field.key} className="field">
                     <label htmlFor={field.key}>
                       {field.label}
-                      {meta[`${field.key}_set`] && <span className="badge badge--ok" style={{ marginLeft: 6 }}>set</span>}
+                      {meta[`${field.key}_set`] && (
+                        <span className="badge badge--ok" style={{ marginLeft: 6 }}>
+                          set
+                        </span>
+                      )}
                       {meta._env_fallbacks?.[field.key] && !meta[`${field.key}_set`] && (
-                        <span className="badge" style={{ marginLeft: 6 }}>.env</span>
+                        <span className="badge" style={{ marginLeft: 6 }}>
+                          .env
+                        </span>
                       )}
                     </label>
                     {field.type === "select" ? (
@@ -234,7 +288,11 @@ export default function AdminSettings() {
                         value={form[field.key] || ""}
                         onChange={(e) => handleChange(field.key, e.target.value)}
                       >
-                        {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                        {field.options.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
                       </select>
                     ) : (
                       <input
@@ -260,7 +318,10 @@ export default function AdminSettings() {
                         (generates SecurityCredential automatically)
                       </span>
                     </label>
-                    <div className="inline-form" style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}>
+                    <div
+                      className="inline-form"
+                      style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}
+                    >
                       <input
                         id="init_password"
                         className="input"
@@ -306,8 +367,8 @@ export default function AdminSettings() {
         <div className="settings-header">
           <h2 className="section-title">Direct Sales</h2>
           <p className="muted" style={{ margin: "0.25rem 0 1rem" }}>
-            Commission rate applied to vendor direct sale orders.
-            Regular online commission is set per-vendor or via <code>PLATFORM_COMMISSION_RATE</code> in <code>.env</code>.
+            Commission rate applied to vendor direct sale orders. Regular online commission is set
+            per-vendor or via <code>PLATFORM_COMMISSION_RATE</code> in <code>.env</code>.
           </p>
         </div>
         <div className="card settings-group" style={{ marginBottom: "1rem" }}>
@@ -329,7 +390,10 @@ export default function AdminSettings() {
               </p>
             </div>
             <div className="field">
-              <label htmlFor="pass_shipping_to_vendor" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label
+                htmlFor="pass_shipping_to_vendor"
+                style={{ display: "flex", alignItems: "center", gap: 8 }}
+              >
                 <input
                   id="pass_shipping_to_vendor"
                   type="checkbox"
@@ -355,8 +419,8 @@ export default function AdminSettings() {
         <div className="settings-header">
           <h2 className="section-title">Email (SMTP)</h2>
           <p className="muted" style={{ margin: "0.25rem 0 1rem" }}>
-            Configure outbound email so order confirmations, payout notifications, and password resets
-            reach real inboxes. Without SMTP, emails are logged to the console (dev mode).
+            Configure outbound email so order confirmations, payout notifications, and password
+            resets reach real inboxes. Without SMTP, emails are logged to the console (dev mode).
             Fields left blank fall back to <code>.env</code>.
           </p>
         </div>
@@ -367,17 +431,31 @@ export default function AdminSettings() {
               <label htmlFor="smtp_host">
                 Host
                 {smtpMeta._env_fallbacks?.smtp_host && !smtpMeta.smtp_host && (
-                  <span className="badge" style={{ marginLeft: 6 }}>.env</span>
+                  <span className="badge" style={{ marginLeft: 6 }}>
+                    .env
+                  </span>
                 )}
               </label>
-              <input id="smtp_host" className="input" placeholder="e.g. smtp.gmail.com"
-                value={smtp.smtp_host} onChange={(e) => handleSmtpChange("smtp_host", e.target.value)} />
+              <input
+                id="smtp_host"
+                className="input"
+                placeholder="e.g. smtp.gmail.com"
+                value={smtp.smtp_host}
+                onChange={(e) => handleSmtpChange("smtp_host", e.target.value)}
+              />
             </div>
             <div className="field">
               <label htmlFor="smtp_port">Port</label>
-              <input id="smtp_port" className="input" type="number" min="1" max="65535"
-                placeholder="587" value={smtp.smtp_port}
-                onChange={(e) => handleSmtpChange("smtp_port", e.target.value)} />
+              <input
+                id="smtp_port"
+                className="input"
+                type="number"
+                min="1"
+                max="65535"
+                placeholder="587"
+                value={smtp.smtp_port}
+                onChange={(e) => handleSmtpChange("smtp_port", e.target.value)}
+              />
               <p className="muted" style={{ fontSize: "0.8rem", margin: "0.2rem 0 0" }}>
                 587 (STARTTLS) or 465 (SSL/TLS)
               </p>
@@ -391,23 +469,42 @@ export default function AdminSettings() {
               <label htmlFor="smtp_user">
                 Username
                 {smtpMeta._env_fallbacks?.smtp_user && !smtpMeta.smtp_user && (
-                  <span className="badge" style={{ marginLeft: 6 }}>.env</span>
+                  <span className="badge" style={{ marginLeft: 6 }}>
+                    .env
+                  </span>
                 )}
               </label>
-              <input id="smtp_user" className="input" placeholder="e.g. you@gmail.com"
-                value={smtp.smtp_user} onChange={(e) => handleSmtpChange("smtp_user", e.target.value)} />
+              <input
+                id="smtp_user"
+                className="input"
+                placeholder="e.g. you@gmail.com"
+                value={smtp.smtp_user}
+                onChange={(e) => handleSmtpChange("smtp_user", e.target.value)}
+              />
             </div>
             <div className="field">
               <label htmlFor="smtp_pass">
                 Password
-                {smtpMeta.smtp_pass_set && <span className="badge badge--ok" style={{ marginLeft: 6 }}>set</span>}
+                {smtpMeta.smtp_pass_set && (
+                  <span className="badge badge--ok" style={{ marginLeft: 6 }}>
+                    set
+                  </span>
+                )}
                 {smtpMeta._env_fallbacks?.smtp_pass && !smtpMeta.smtp_pass_set && (
-                  <span className="badge" style={{ marginLeft: 6 }}>.env</span>
+                  <span className="badge" style={{ marginLeft: 6 }}>
+                    .env
+                  </span>
                 )}
               </label>
-              <input id="smtp_pass" className="input" type="password" autoComplete="off"
+              <input
+                id="smtp_pass"
+                className="input"
+                type="password"
+                autoComplete="off"
                 placeholder="App password or SMTP password"
-                value={smtp.smtp_pass} onChange={(e) => handleSmtpChange("smtp_pass", e.target.value)} />
+                value={smtp.smtp_pass}
+                onChange={(e) => handleSmtpChange("smtp_pass", e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -418,17 +515,27 @@ export default function AdminSettings() {
               <label htmlFor="smtp_from">
                 From address
                 {smtpMeta._env_fallbacks?.smtp_from && !smtpMeta.smtp_from && (
-                  <span className="badge" style={{ marginLeft: 6 }}>.env</span>
+                  <span className="badge" style={{ marginLeft: 6 }}>
+                    .env
+                  </span>
                 )}
               </label>
-              <input id="smtp_from" className="input" placeholder='Fidus <no-reply@yourdomain.com>'
-                value={smtp.smtp_from} onChange={(e) => handleSmtpChange("smtp_from", e.target.value)} />
+              <input
+                id="smtp_from"
+                className="input"
+                placeholder="Fidus <no-reply@yourdomain.com>"
+                value={smtp.smtp_from}
+                onChange={(e) => handleSmtpChange("smtp_from", e.target.value)}
+              />
             </div>
           </div>
         </div>
         <div className="settings-actions" style={{ gap: "0.75rem" }}>
-          <button type="submit" className="btn btn--primary"
-            disabled={smtpSaving || Object.keys(smtpDirty).length === 0}>
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={smtpSaving || Object.keys(smtpDirty).length === 0}
+          >
             {smtpSaving ? "Saving..." : "Save SMTP Settings"}
           </button>
         </div>
@@ -439,10 +546,19 @@ export default function AdminSettings() {
           Send a test email to verify your SMTP configuration works. Save settings first.
         </p>
         <div className="inline-form" style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}>
-          <input className="input" type="email" placeholder="recipient@example.com"
-            value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
-          <button type="button" className="btn btn--ghost" disabled={testBusy || !testEmail.trim()}
-            onClick={handleTestSmtp}>
+          <input
+            className="input"
+            type="email"
+            placeholder="recipient@example.com"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            disabled={testBusy || !testEmail.trim()}
+            onClick={handleTestSmtp}
+          >
             {testBusy ? "Sending..." : "Send Test"}
           </button>
         </div>

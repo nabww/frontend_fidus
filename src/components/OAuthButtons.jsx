@@ -87,7 +87,9 @@ export default function OAuthButtons() {
 
   return (
     <>
-      <div className="oauth-divider"><span>or continue with</span></div>
+      <div className="oauth-divider">
+        <span>or continue with</span>
+      </div>
       <div className="oauth-buttons">
         {GOOGLE_CLIENT_ID && <div ref={googleBtnRef} className="oauth-google" />}
         {APPLE_CLIENT_ID && (

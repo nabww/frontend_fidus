@@ -15,9 +15,11 @@ export default function ForgotPassword() {
       setMessage(data.message);
       setStatus("sent");
     } catch (err) {
-      setMessage(err.response?.status === 429
-        ? "Too many attempts. Please wait a few minutes and try again."
-        : "Something went wrong. Please try again.");
+      setMessage(
+        err.response?.status === 429
+          ? "Too many attempts. Please wait a few minutes and try again."
+          : "Something went wrong. Please try again."
+      );
       setStatus("error");
     }
   }
@@ -34,8 +36,15 @@ export default function ForgotPassword() {
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="email">Email</label>
-              <input id="email" className="input" type="email" required autoComplete="email"
-                value={email} onChange={(e) => setEmail(e.target.value)} />
+              <input
+                id="email"
+                className="input"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <button className="btn btn--primary" type="submit" disabled={status === "sending"}>
               {status === "sending" ? "Sending..." : "Send reset link"}

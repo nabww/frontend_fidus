@@ -8,7 +8,13 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const from = useLocation().state?.from;
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -80,7 +86,10 @@ export default function Register() {
         </form>
         <OAuthButtons />
         <p className="auth-card__footer">
-          Already have an account? <Link to="/login" state={{ from }}>Sign in</Link>
+          Already have an account?{" "}
+          <Link to="/login" state={{ from }}>
+            Sign in
+          </Link>
         </p>
         <p className="auth-card__footer" style={{ marginTop: "0.6rem" }}>
           Want to sell on Fidus? <Link to="/sell">Apply as a seller</Link>

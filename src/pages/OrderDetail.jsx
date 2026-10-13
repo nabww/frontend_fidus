@@ -30,7 +30,9 @@ export default function OrderDetail() {
         if (result.status === "paid") toast("Payment confirmed");
         else toast("Payment was cancelled or timed out", { type: "error" });
       } else if (result.payment === "failed") {
-        setError(`${result.reason || "That payment attempt didn't go through"}. You can try again.`);
+        setError(
+          `${result.reason || "That payment attempt didn't go through"}. You can try again.`
+        );
       } else {
         setError("Still awaiting confirmation — check back shortly.");
       }
@@ -47,7 +49,8 @@ export default function OrderDetail() {
   }
 
   useEffect(() => {
-    client.get(`/orders/${id}`)
+    client
+      .get(`/orders/${id}`)
       .then((res) => setOrder(res.data))
       .catch(() => setError("Order not found."));
   }, [id]);
@@ -57,12 +60,15 @@ export default function OrderDetail() {
   useEffect(() => {
     if (order?.status !== "pending" || !order.checkout_request_id) return;
     const t = setInterval(() => {
-      client.get(`/orders/${id}`).then((res) => {
-        if (res.data.status !== "pending") {
-          setOrder(res.data);
-          toast("Payment confirmed — thank you!");
-        }
-      }).catch(() => {});
+      client
+        .get(`/orders/${id}`)
+        .then((res) => {
+          if (res.data.status !== "pending") {
+            setOrder(res.data);
+            toast("Payment confirmed — thank you!");
+          }
+        })
+        .catch(() => {});
     }, 10_000);
     return () => clearInterval(t);
   }, [order?.status, order?.checkout_request_id, id]);
@@ -91,7 +97,8 @@ export default function OrderDetail() {
   async function confirmReceived() {
     const ok = await confirm({
       title: "Confirm delivery?",
-      message: "Only confirm once the items are actually in your hands — this releases payment to the vendor.",
+      message:
+        "Only confirm once the items are actually in your hands — this releases payment to the vendor.",
       confirmLabel: "I received it",
       cancelLabel: "Not yet",
     });
@@ -108,8 +115,18 @@ export default function OrderDetail() {
     }
   }
 
-  if (error && !order) return <div className="page"><p className="error-text">{error}</p></div>;
-  if (!order) return <div className="page"><p className="muted">Loading...</p></div>;
+  if (error && !order)
+    return (
+      <div className="page">
+        <p className="error-text">{error}</p>
+      </div>
+    );
+  if (!order)
+    return (
+      <div className="page">
+        <p className="muted">Loading...</p>
+      </div>
+    );
 
   const isPickup = order.fulfillment_type === "pickup";
   const steps = isPickup ? ["pending", "delivered"] : STEPS;
@@ -146,7 +163,8 @@ export default function OrderDetail() {
         <p className="notice">
           This order was cancelled and its stock released.
           {order.refund_status === "due" && " Your refund is being processed."}
-          {order.refund_status === "paid" && ` Your refund was sent${order.refund_reference ? ` (${order.refund_reference})` : ""}.`}
+          {order.refund_status === "paid" &&
+            ` Your refund was sent${order.refund_reference ? ` (${order.refund_reference})` : ""}.`}
         </p>
       ) : (
         <div className="steps">
@@ -164,9 +182,15 @@ export default function OrderDetail() {
         {order.items?.map((item) => (
           <div key={item.id} className="card item-card">
             <div className="item-card__image">
-              {item.product?.image_url
-                ? <img src={imageUrl(item.product.image_url)} alt={item.product.name} loading="lazy" />
-                : <span aria-hidden="true">◆</span>}
+              {item.product?.image_url ? (
+                <img
+                  src={imageUrl(item.product.image_url)}
+                  alt={item.product.name}
+                  loading="lazy"
+                />
+              ) : (
+                <span aria-hidden="true">◆</span>
+              )}
               {item.quantity > 1 && <span className="item-tile__qty">×{item.quantity}</span>}
             </div>
             <div className="item-card__body">
@@ -181,12 +205,19 @@ export default function OrderDetail() {
       </div>
 
       <div className="card" style={{ padding: "1.1rem", marginTop: "1.25rem" }}>
-        <div className="row"><span className="muted">Subtotal</span><span>KES {Number(order.subtotal).toLocaleString()}</span></div>
+        <div className="row">
+          <span className="muted">Subtotal</span>
+          <span>KES {Number(order.subtotal).toLocaleString()}</span>
+        </div>
         {!isPickup && (
-          <div className="row"><span className="muted">Shipping</span><span>KES {Number(order.shipping_cost).toLocaleString()}</span></div>
+          <div className="row">
+            <span className="muted">Shipping</span>
+            <span>KES {Number(order.shipping_cost).toLocaleString()}</span>
+          </div>
         )}
         <div className="row" style={{ borderBottom: "none", fontWeight: 600 }}>
-          <span>Total</span><span>KES {Number(order.total).toLocaleString()}</span>
+          <span>Total</span>
+          <span>KES {Number(order.total).toLocaleString()}</span>
         </div>
       </div>
 
@@ -194,17 +225,21 @@ export default function OrderDetail() {
         <p className="muted" style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
           Pickup — collected at the vendor
         </p>
-      ) : order.shipping_address && (
-        <p className="muted" style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
-          Ships to: {order.shipping_address}
-        </p>
+      ) : (
+        order.shipping_address && (
+          <p className="muted" style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
+            Ships to: {order.shipping_address}
+          </p>
+        )
       )}
 
       {order.status === "shipped" && (
         <div className="card" style={{ padding: "1rem 1.1rem", marginTop: "1rem" }}>
           <p style={{ margin: "0 0 0.75rem" }}>
             <strong>Has your order arrived?</strong>{" "}
-            <span className="muted">Confirming tells us the vendor delivered — and releases their payment.</span>
+            <span className="muted">
+              Confirming tells us the vendor delivered — and releases their payment.
+            </span>
           </p>
           <button className="btn btn--primary" onClick={confirmReceived} disabled={confirming}>
             {confirming ? "Confirming..." : "Yes, I received my order"}
@@ -214,14 +249,19 @@ export default function OrderDetail() {
 
       {order.status === "pending" && order.checkout_request_id && (
         <p className="notice" style={{ marginTop: "1rem" }}>
-          A payment prompt was sent to your phone — this page updates automatically once M-Pesa confirms.
+          A payment prompt was sent to your phone — this page updates automatically once M-Pesa
+          confirms.
         </p>
       )}
 
       <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
         {order.status === "pending" && (
           <button className="btn btn--primary" onClick={payNow} disabled={paying}>
-            {paying ? "Check your phone..." : order.checkout_request_id ? "Check payment status" : "Pay with M-Pesa"}
+            {paying
+              ? "Check your phone..."
+              : order.checkout_request_id
+                ? "Check payment status"
+                : "Pay with M-Pesa"}
           </button>
         )}
         {["pending", "paid"].includes(order.status) && (

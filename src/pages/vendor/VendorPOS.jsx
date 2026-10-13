@@ -38,7 +38,16 @@ export default function VendorPOS() {
     if (!pid) return;
     const p = products.find((x) => x.id === pid);
     if (p && !cart.find((c) => c.productId === p.id)) {
-      setCart([{ productId: p.id, name: p.name, price: Number(p.effective_price ?? p.price), image_url: p.image_url, stock: p.stock, quantity: 1 }]);
+      setCart([
+        {
+          productId: p.id,
+          name: p.name,
+          price: Number(p.effective_price ?? p.price),
+          image_url: p.image_url,
+          stock: p.stock,
+          quantity: 1,
+        },
+      ]);
     }
     setPreloaded(true);
     setSearchParams({}, { replace: true }); // clean up the URL
@@ -48,7 +57,7 @@ export default function VendorPOS() {
   const isDelivery = fulfillment === "delivery";
   const zone = isDelivery ? zones.find((z) => z.town === town) : null;
   const freeShip = isDelivery && config?.freeMin > 0 && subtotal >= config.freeMin;
-  const shipping = isDelivery ? (freeShip ? 0 : zone?.fee ?? null) : 0;
+  const shipping = isDelivery ? (freeShip ? 0 : (zone?.fee ?? null)) : 0;
   const total = subtotal + (shipping || 0);
 
   function addToCart(product) {
@@ -59,24 +68,25 @@ export default function VendorPOS() {
           toast("No more stock available", { type: "error" });
           return c;
         }
-        return c.map((i) =>
-          i.productId === product.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
+        return c.map((i) => (i.productId === product.id ? { ...i, quantity: i.quantity + 1 } : i));
       }
-      return [...c, {
-        productId: product.id,
-        name: product.name,
-        price: Number(product.effective_price ?? product.price),
-        image_url: product.image_url,
-        stock: product.stock,
-        quantity: 1,
-      }];
+      return [
+        ...c,
+        {
+          productId: product.id,
+          name: product.name,
+          price: Number(product.effective_price ?? product.price),
+          image_url: product.image_url,
+          stock: product.stock,
+          quantity: 1,
+        },
+      ];
     });
   }
 
   function updateQty(productId, qty) {
     if (qty < 1) return removeFromCart(productId);
-    setCart((c) => c.map((i) => i.productId === productId ? { ...i, quantity: qty } : i));
+    setCart((c) => c.map((i) => (i.productId === productId ? { ...i, quantity: qty } : i)));
   }
 
   function removeFromCart(productId) {
@@ -99,7 +109,8 @@ export default function VendorPOS() {
     if (!cart.length) return toast("Add products to the sale", { type: "error" });
     if (!phone.trim()) return toast("Enter the customer's M-Pesa number", { type: "error" });
     if (isDelivery && !town) return toast("Select a delivery town", { type: "error" });
-    if (isDelivery && !addressDetail.trim()) return toast("Enter the delivery address", { type: "error" });
+    if (isDelivery && !addressDetail.trim())
+      return toast("Enter the delivery address", { type: "error" });
 
     setStatus("placing");
     setErrorMsg("");
@@ -193,7 +204,9 @@ export default function VendorPOS() {
       <DashboardShell area="vendor">
         <div className="card" style={{ textAlign: "center", padding: "2rem" }}>
           <h2 style={{ color: "var(--accent)", marginBottom: "0.5rem" }}>Sale Complete</h2>
-          <p className="muted">Order #{result?.order?.order_no} — {kes(result?.order?.total)}</p>
+          <p className="muted">
+            Order #{result?.order?.order_no} — {kes(result?.order?.total)}
+          </p>
           <button className="btn btn--primary" style={{ marginTop: "1rem" }} onClick={reset}>
             New Sale
           </button>
@@ -217,23 +230,32 @@ export default function VendorPOS() {
                 disabled={status !== "idle"}
               >
                 <div className="pos-product-img">
-                  {p.image_url
-                    ? <img src={imageUrl(p.image_url)} alt="" loading="lazy" />
-                    : <span className="muted">No image</span>}
+                  {p.image_url ? (
+                    <img src={imageUrl(p.image_url)} alt="" loading="lazy" />
+                  ) : (
+                    <span className="muted">No image</span>
+                  )}
                 </div>
                 <div className="pos-product-info">
                   <strong className="truncate">{p.name}</strong>
                   <span className="muted">
-                    {p.discount_active
-                      ? <><span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}</>
-                      : kes(p.price)}
-                    {" "}· {p.stock} left
+                    {p.discount_active ? (
+                      <>
+                        <span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}
+                      </>
+                    ) : (
+                      kes(p.price)
+                    )}{" "}
+                    · {p.stock} left
                   </span>
                 </div>
               </button>
             ))}
             {data && products.length === 0 && (
-              <p className="muted" style={{ gridColumn: "1 / -1", textAlign: "center", padding: "2rem 0" }}>
+              <p
+                className="muted"
+                style={{ gridColumn: "1 / -1", textAlign: "center", padding: "2rem 0" }}
+              >
                 {q ? "No matching products" : "No products in stock"}
               </p>
             )}
@@ -255,13 +277,23 @@ export default function VendorPOS() {
                   <span className="muted">{kes(item.price)} each</span>
                 </div>
                 <div className="pos-cart__item-controls">
-                  <button type="button" className="btn btn--ghost btn--sm"
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
                     onClick={() => updateQty(item.productId, item.quantity - 1)}
-                    disabled={status !== "idle"}>−</button>
+                    disabled={status !== "idle"}
+                  >
+                    −
+                  </button>
                   <span className="pos-qty">{item.quantity}</span>
-                  <button type="button" className="btn btn--ghost btn--sm"
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
                     onClick={() => updateQty(item.productId, item.quantity + 1)}
-                    disabled={status !== "idle" || item.quantity >= item.stock}>+</button>
+                    disabled={status !== "idle" || item.quantity >= item.stock}
+                  >
+                    +
+                  </button>
                   <span className="muted" style={{ minWidth: 70, textAlign: "right" }}>
                     {kes(item.price * item.quantity)}
                   </span>
@@ -280,16 +312,20 @@ export default function VendorPOS() {
               <div className="field" style={{ margin: "0.75rem 0 0.5rem" }}>
                 <label>Fulfillment</label>
                 <div className="pos-fulfillment-toggle">
-                  <button type="button"
+                  <button
+                    type="button"
                     className={`btn btn--sm ${fulfillment === "pickup" ? "btn--primary" : "btn--ghost"}`}
                     onClick={() => setFulfillment("pickup")}
-                    disabled={status !== "idle"}>
+                    disabled={status !== "idle"}
+                  >
                     Pickup
                   </button>
-                  <button type="button"
+                  <button
+                    type="button"
                     className={`btn btn--sm ${fulfillment === "delivery" ? "btn--primary" : "btn--ghost"}`}
                     onClick={() => setFulfillment("delivery")}
-                    disabled={status !== "idle"}>
+                    disabled={status !== "idle"}
+                  >
                     Delivery
                   </button>
                 </div>
@@ -299,21 +335,34 @@ export default function VendorPOS() {
                 <>
                   <div className="field" style={{ margin: "0.5rem 0" }}>
                     <label htmlFor="pos-town">Delivery town</label>
-                    <select id="pos-town" className="input" value={town} required
-                      onChange={(e) => setTown(e.target.value)} disabled={status !== "idle"}>
+                    <select
+                      id="pos-town"
+                      className="input"
+                      value={town}
+                      required
+                      onChange={(e) => setTown(e.target.value)}
+                      disabled={status !== "idle"}
+                    >
                       <option value="">Select a town</option>
                       {zones.map((z) => (
                         <option key={z.town} value={z.town}>
-                          {z.town}{freeShip || z.fee === 0 ? " — free" : ` — KES ${z.fee.toLocaleString()}`}
+                          {z.town}
+                          {freeShip || z.fee === 0 ? " — free" : ` — KES ${z.fee.toLocaleString()}`}
                         </option>
                       ))}
                     </select>
                   </div>
                   <div className="field" style={{ margin: "0.5rem 0" }}>
                     <label htmlFor="pos-addr">Delivery address</label>
-                    <input id="pos-addr" className="input" placeholder="Street, building, apt"
-                      value={addressDetail} onChange={(e) => setAddressDetail(e.target.value)}
-                      disabled={status !== "idle"} required />
+                    <input
+                      id="pos-addr"
+                      className="input"
+                      placeholder="Street, building, apt"
+                      value={addressDetail}
+                      onChange={(e) => setAddressDetail(e.target.value)}
+                      disabled={status !== "idle"}
+                      required
+                    />
                   </div>
                   {shipping != null && (
                     <div className="pos-cart__subtotal">
@@ -343,7 +392,9 @@ export default function VendorPOS() {
                 />
               </div>
               <div className="field" style={{ margin: "0 0 0.75rem" }}>
-                <label htmlFor="pos-email">Customer Email <span className="muted">(optional — for receipts)</span></label>
+                <label htmlFor="pos-email">
+                  Customer Email <span className="muted">(optional — for receipts)</span>
+                </label>
                 <input
                   id="pos-email"
                   className="input"
@@ -355,11 +406,16 @@ export default function VendorPOS() {
                 />
               </div>
               {errorMsg && (
-                <p className="error-text" style={{ margin: "0.5rem 0" }}>{errorMsg}</p>
+                <p className="error-text" style={{ margin: "0.5rem 0" }}>
+                  {errorMsg}
+                </p>
               )}
               {status === "idle" && (
-                <button type="submit" className="btn btn--primary pos-pay-btn"
-                  disabled={isDelivery && shipping == null}>
+                <button
+                  type="submit"
+                  className="btn btn--primary pos-pay-btn"
+                  disabled={isDelivery && shipping == null}
+                >
                   Send Payment Request — {kes(total)}
                 </button>
               )}

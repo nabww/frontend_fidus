@@ -18,9 +18,17 @@ export default function VendorProducts() {
   return (
     <DashboardShell area="vendor">
       <div className="toolbar">
-        <SearchBox value={query} onChange={(v) => { setQuery(v); setPage(1); }}
-          placeholder="Search your products" />
-        <Link to="/vendor/products/new" className="btn btn--primary btn--sm">Add product</Link>
+        <SearchBox
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            setPage(1);
+          }}
+          placeholder="Search your products"
+        />
+        <Link to="/vendor/products/new" className="btn btn--primary btn--sm">
+          Add product
+        </Link>
       </div>
 
       {error && <p className="error-text">{error}</p>}
@@ -40,26 +48,48 @@ export default function VendorProducts() {
             <div className="order-card__main">
               <strong className="truncate">{p.name}</strong>
               <span className="muted">
-                {p.category || "Uncategorised"} · {p.discount_active
-                  ? <><span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}</>
-                  : kes(p.price)} · {p.stock} in stock
+                {p.category || "Uncategorised"} ·{" "}
+                {p.discount_active ? (
+                  <>
+                    <span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}
+                  </>
+                ) : (
+                  kes(p.price)
+                )}{" "}
+                · {p.stock} in stock
               </span>
             </div>
-            {p.discount_active && <span className="badge badge--accent">-{p.discount_percent}%</span>}
+            {p.discount_active && (
+              <span className="badge badge--accent">-{p.discount_percent}%</span>
+            )}
             {p.one_of_a_kind && <span className="badge badge--info">unique</span>}
             {!p.is_active && <span className="badge badge--cancelled">hidden</span>}
-            {p.stock === 0 && p.is_active && !p.one_of_a_kind && <span className="badge">out of stock</span>}
+            {p.stock === 0 && p.is_active && !p.one_of_a_kind && (
+              <span className="badge">out of stock</span>
+            )}
           </Link>
         ))}
       </div>
 
       {data?.pages > 1 && (
         <div className="pagination">
-          <button className="btn btn--ghost btn--sm" disabled={page <= 1}
-            onClick={() => setPage(page - 1)}>← Prev</button>
-          <span className="muted">{page} / {data.pages}</span>
-          <button className="btn btn--ghost btn--sm" disabled={page >= data.pages}
-            onClick={() => setPage(page + 1)}>Next →</button>
+          <button
+            className="btn btn--ghost btn--sm"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
+            ← Prev
+          </button>
+          <span className="muted">
+            {page} / {data.pages}
+          </span>
+          <button
+            className="btn btn--ghost btn--sm"
+            disabled={page >= data.pages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next →
+          </button>
         </div>
       )}
     </DashboardShell>

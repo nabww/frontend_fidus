@@ -9,8 +9,8 @@ import { kes } from "../../utils/format";
 export default function AdminShipping() {
   const { toast } = useToast();
   const { data, error, reload } = useList("/admin/shipping");
-  const [edits, setEdits] = useState({});       // town -> fee (unsaved)
-  const [min, setMin] = useState(null);        // null = untouched
+  const [edits, setEdits] = useState({}); // town -> fee (unsaved)
+  const [min, setMin] = useState(null); // null = untouched
   const [newZone, setNewZone] = useState({ town: "", fee: "" });
   const [busy, setBusy] = useState("");
 
@@ -18,8 +18,16 @@ export default function AdminShipping() {
     const fee = Number(edits[zone.town] ?? zone.fee);
     setBusy(`zone:${zone.town}`);
     try {
-      await client.put("/admin/shipping/zones", { town: zone.town, fee, is_active: zone.is_active });
-      setEdits((e) => { const n = { ...e }; delete n[zone.town]; return n; });
+      await client.put("/admin/shipping/zones", {
+        town: zone.town,
+        fee,
+        is_active: zone.is_active,
+      });
+      setEdits((e) => {
+        const n = { ...e };
+        delete n[zone.town];
+        return n;
+      });
       toast(`${zone.town} updated`);
       reload();
     } catch (err) {
@@ -32,7 +40,9 @@ export default function AdminShipping() {
   async function toggleZone(zone) {
     setBusy(`zone:${zone.town}`);
     try {
-      await client.put(`/admin/shipping/zones/${encodeURIComponent(zone.town)}/active`, { is_active: !zone.is_active });
+      await client.put(`/admin/shipping/zones/${encodeURIComponent(zone.town)}/active`, {
+        is_active: !zone.is_active,
+      });
       toast(zone.is_active ? `${zone.town} disabled` : `${zone.town} enabled`);
       reload();
     } catch (err) {
@@ -61,7 +71,9 @@ export default function AdminShipping() {
     e.preventDefault();
     setBusy("min");
     try {
-      await client.put("/admin/shipping/free-min", { free_shipping_min: min ?? data.free_shipping_min });
+      await client.put("/admin/shipping/free-min", {
+        free_shipping_min: min ?? data.free_shipping_min,
+      });
       setMin(null);
       toast("Free-delivery threshold saved");
       reload();
@@ -87,12 +99,21 @@ export default function AdminShipping() {
               <div className="field">
                 <label>Minimum subtotal (KES)</label>
                 <input
-                  className="input" type="number" min="0" step="1" inputMode="numeric"
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
                   value={min ?? data.free_shipping_min}
                   onChange={(e) => setMin(e.target.value)}
                 />
               </div>
-              <button className="btn btn--primary" disabled={busy === "min" || (min ?? data.free_shipping_min) === data.free_shipping_min}>
+              <button
+                className="btn btn--primary"
+                disabled={
+                  busy === "min" || (min ?? data.free_shipping_min) === data.free_shipping_min
+                }
+              >
                 {busy === "min" ? "Saving..." : "Save"}
               </button>
             </div>
@@ -103,7 +124,9 @@ export default function AdminShipping() {
             )}
           </form>
 
-          <h2 className="section-title" style={{ marginTop: "1.75rem" }}>Delivery towns & fees</h2>
+          <h2 className="section-title" style={{ marginTop: "1.75rem" }}>
+            Delivery towns & fees
+          </h2>
           {data.zones.length === 0 && <ListEmpty>No delivery towns configured.</ListEmpty>}
           <div className="stack">
             {data.zones.map((z) => (
@@ -111,23 +134,37 @@ export default function AdminShipping() {
                 <div className="order-card__main">
                   <strong>{z.town}</strong>
                   <span className="muted truncate">
-                    {Number(z.fee) === 0 ? "Free delivery" : `KES ${Number(z.fee).toLocaleString()}`}
+                    {Number(z.fee) === 0
+                      ? "Free delivery"
+                      : `KES ${Number(z.fee).toLocaleString()}`}
                     {!z.is_active && " · not offered at checkout"}
                   </span>
                 </div>
                 <input
-                  className="input" type="number" min="0" step="1" inputMode="numeric"
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
                   style={{ width: 110 }}
                   value={edits[z.town] ?? z.fee}
                   onChange={(e) => setEdits((s) => ({ ...s, [z.town]: e.target.value }))}
                   aria-label={`${z.town} fee`}
                 />
                 {edits[z.town] !== undefined && Number(edits[z.town]) !== Number(z.fee) && (
-                  <button className="btn btn--primary btn--sm" disabled={busy === `zone:${z.town}`} onClick={() => saveZone(z)}>
+                  <button
+                    className="btn btn--primary btn--sm"
+                    disabled={busy === `zone:${z.town}`}
+                    onClick={() => saveZone(z)}
+                  >
                     Save
                   </button>
                 )}
-                <button className="btn btn--ghost btn--sm" disabled={busy === `zone:${z.town}`} onClick={() => toggleZone(z)}>
+                <button
+                  className="btn btn--ghost btn--sm"
+                  disabled={busy === `zone:${z.town}`}
+                  onClick={() => toggleZone(z)}
+                >
                   {z.is_active ? "Hide" : "Show"}
                 </button>
               </div>
@@ -137,15 +174,30 @@ export default function AdminShipping() {
           <form className="inline-form" onSubmit={addZone} style={{ marginTop: "1rem" }}>
             <div className="field field--grow">
               <label>Add a town</label>
-              <input className="input" required placeholder="e.g. Eldoret" value={newZone.town}
-                onChange={(e) => setNewZone({ ...newZone, town: e.target.value })} />
+              <input
+                className="input"
+                required
+                placeholder="e.g. Eldoret"
+                value={newZone.town}
+                onChange={(e) => setNewZone({ ...newZone, town: e.target.value })}
+              />
             </div>
             <div className="field">
               <label>Fee (KES)</label>
-              <input className="input" required type="number" min="0" step="1" inputMode="numeric" value={newZone.fee}
-                onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })} />
+              <input
+                className="input"
+                required
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                value={newZone.fee}
+                onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })}
+              />
             </div>
-            <button className="btn btn--primary" disabled={busy === "add"}>Add</button>
+            <button className="btn btn--primary" disabled={busy === "add"}>
+              Add
+            </button>
           </form>
         </>
       )}

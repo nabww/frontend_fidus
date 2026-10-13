@@ -22,9 +22,10 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef(null);
   const count = items.reduce((sum, i) => sum + i.quantity, 0);
-  const roleLink = user?.role === "vendor" && user.vendor_status !== "approved"
-    ? { to: "/vendor/status", label: "Application" }
-    : user && ROLE_LINK[user.role];
+  const roleLink =
+    user?.role === "vendor" && user.vendor_status !== "approved"
+      ? { to: "/vendor/status", label: "Application" }
+      : user && ROLE_LINK[user.role];
   const initial = (user?.name || user?.email || "?").trim().charAt(0).toUpperCase();
 
   // Solid background + faint shadow once the page scrolls under the bar
@@ -39,8 +40,12 @@ export default function Navbar() {
   useEffect(() => setMenuOpen(false), [location.pathname]);
   useEffect(() => {
     if (!menuOpen) return;
-    const onClick = (e) => { if (!menuRef.current?.contains(e.target)) setMenuOpen(false); };
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
+    const onClick = (e) => {
+      if (!menuRef.current?.contains(e.target)) setMenuOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
     document.addEventListener("mousedown", onClick);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -61,13 +66,28 @@ export default function Navbar() {
   return (
     <nav className={`navbar${scrolled ? " is-scrolled" : ""}`}>
       <div className="navbar__inner">
-        <Link to="/" className="navbar__brand">Fidus<span>.</span></Link>
+        <Link to="/" className="navbar__brand">
+          Fidus<span>.</span>
+        </Link>
 
         <div className="navbar__links">
-          {roleLink && <NavLink to={roleLink.to} className="nav-link hide-sm">{roleLink.label}</NavLink>}
-          {!user && <NavLink to="/login" className="nav-link hide-sm">Login</NavLink>}
+          {roleLink && (
+            <NavLink to={roleLink.to} className="nav-link hide-sm">
+              {roleLink.label}
+            </NavLink>
+          )}
+          {!user && (
+            <NavLink to="/login" className="nav-link hide-sm">
+              Login
+            </NavLink>
+          )}
 
-          <Link to="/cart" className="nav-icon cart-link" aria-label={`Cart, ${count} items`} title="Cart">
+          <Link
+            to="/cart"
+            className="nav-icon cart-link"
+            aria-label={`Cart, ${count} items`}
+            title="Cart"
+          >
             {/* Re-keying on each add remounts the wrapper, replaying the bob */}
             <span key={bump} className={`cart-icon${bump ? " is-bobbing" : ""}`}>
               <CartIcon />
@@ -81,10 +101,17 @@ export default function Navbar() {
 
           {!user && (
             <>
-              <button className="nav-icon" onClick={toggleTheme} title={themeLabel} aria-label={themeLabel}>
+              <button
+                className="nav-icon"
+                onClick={toggleTheme}
+                title={themeLabel}
+                aria-label={themeLabel}
+              >
                 <ThemeIcon />
               </button>
-              <Link to="/register" className="btn btn--primary btn--sm">Register</Link>
+              <Link to="/register" className="btn btn--primary btn--sm">
+                Register
+              </Link>
             </>
           )}
 
@@ -106,21 +133,35 @@ export default function Navbar() {
                     <span className="muted truncate">{user.email}</span>
                   </div>
                   {roleLink && (
-                    <Link to={roleLink.to} className="account__item" role="menuitem">{roleLink.label}</Link>
+                    <Link to={roleLink.to} className="account__item" role="menuitem">
+                      {roleLink.label}
+                    </Link>
                   )}
                   {user.role === "customer" && (
-                    <Link to={user.vendor_status ? "/vendor/status" : "/sell"} className="account__item" role="menuitem">
+                    <Link
+                      to={user.vendor_status ? "/vendor/status" : "/sell"}
+                      className="account__item"
+                      role="menuitem"
+                    >
                       {user.vendor_status ? "Seller application" : "Sell on Fidus"}
                     </Link>
                   )}
                   {user.role === "vendor" && user.vendor_status === "approved" && (
-                    <Link to="/orders" className="account__item" role="menuitem">My purchases</Link>
+                    <Link to="/orders" className="account__item" role="menuitem">
+                      My purchases
+                    </Link>
                   )}
-                  <Link to="/help" className="account__item" role="menuitem">Help &amp; contact</Link>
+                  <Link to="/help" className="account__item" role="menuitem">
+                    Help &amp; contact
+                  </Link>
                   <button className="account__item" role="menuitem" onClick={toggleTheme}>
                     <ThemeIcon /> {themeLabel}
                   </button>
-                  <button className="account__item account__item--danger" role="menuitem" onClick={signOut}>
+                  <button
+                    className="account__item account__item--danger"
+                    role="menuitem"
+                    onClick={signOut}
+                  >
                     <PowerIcon /> Sign out
                   </button>
                 </div>

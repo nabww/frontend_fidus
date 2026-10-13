@@ -34,7 +34,8 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
-    client.get("/auth/me")
+    client
+      .get("/auth/me")
       .then((res) => {
         setUser(res.data);
         localStorage.setItem("fidus_user", JSON.stringify(res.data));
@@ -99,7 +100,20 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, applyVendor, upgradeToVendor, refreshUser, oauthLogin, resetPassword, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        applyVendor,
+        upgradeToVendor,
+        refreshUser,
+        oauthLogin,
+        resetPassword,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

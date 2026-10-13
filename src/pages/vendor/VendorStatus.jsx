@@ -19,9 +19,12 @@ export default function VendorStatus() {
   const [checking, setChecking] = useState(false);
 
   // Pick up a decision made while they were away
-  useEffect(() => { refreshUser().catch(() => {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    refreshUser().catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (user?.role === "vendor" && user.vendor_status === "approved") return <Navigate to="/vendor" replace />;
+  if (user?.role === "vendor" && user.vendor_status === "approved")
+    return <Navigate to="/vendor" replace />;
   if (user?.role === "admin") return <Navigate to="/admin" replace />;
   if (user?.role === "customer" && !user.vendor_status) return <Navigate to="/sell" replace />;
   const status = user?.vendor_status === "rejected" ? "rejected" : "pending";
@@ -30,7 +33,11 @@ export default function VendorStatus() {
 
   async function check() {
     setChecking(true);
-    try { await refreshUser(); } finally { setChecking(false); }
+    try {
+      await refreshUser();
+    } finally {
+      setChecking(false);
+    }
   }
 
   return (
@@ -42,10 +49,14 @@ export default function VendorStatus() {
         <h1>{title}</h1>
         <p className="muted">{body}</p>
         {isCustomer && status === "pending" && (
-          <p className="muted" style={{ fontSize: "0.9rem" }}>You can keep shopping as usual in the meantime.</p>
+          <p className="muted" style={{ fontSize: "0.9rem" }}>
+            You can keep shopping as usual in the meantime.
+          </p>
         )}
         {status === "rejected" && user?.review_note && (
-          <p className="notice notice--warn"><strong>Reason:</strong> {user.review_note}</p>
+          <p className="notice notice--warn">
+            <strong>Reason:</strong> {user.review_note}
+          </p>
         )}
         <div className="btn-row" style={{ justifyContent: "center" }}>
           {status === "pending" && (
@@ -53,12 +64,25 @@ export default function VendorStatus() {
               {checking ? "Checking..." : "Check status"}
             </button>
           )}
-          {status === "rejected" && isCustomer && <Link to="/sell" className="btn btn--primary">Apply again</Link>}
-          {isCustomer && <Link to="/" className="btn btn--ghost">Continue shopping</Link>}
-          <Link to="/help" className="btn btn--ghost">Contact support</Link>
+          {status === "rejected" && isCustomer && (
+            <Link to="/sell" className="btn btn--primary">
+              Apply again
+            </Link>
+          )}
+          {isCustomer && (
+            <Link to="/" className="btn btn--ghost">
+              Continue shopping
+            </Link>
+          )}
+          <Link to="/help" className="btn btn--ghost">
+            Contact support
+          </Link>
         </div>
         <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
-          Questions? Email <a href={`mailto:${SUPPORT.email}`} style={{ color: "var(--accent)" }}>{SUPPORT.email}</a>
+          Questions? Email{" "}
+          <a href={`mailto:${SUPPORT.email}`} style={{ color: "var(--accent)" }}>
+            {SUPPORT.email}
+          </a>
         </p>
       </div>
     </div>

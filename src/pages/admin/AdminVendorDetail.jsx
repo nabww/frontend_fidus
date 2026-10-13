@@ -26,15 +26,23 @@ export default function AdminVendorDetail() {
     if (decision === "approved") {
       const ok = await confirm({
         title: `Approve ${vendor.business_name || vendor.name}?`,
-        message: "They can start listing products straight away, and we'll email them the good news.",
+        message:
+          "They can start listing products straight away, and we'll email them the good news.",
         confirmLabel: "Approve seller",
       });
       if (!ok) return;
     }
     setBusy(true);
     try {
-      await client.put(`/admin/vendors/${id}/review`, { decision, note: decision === "rejected" ? reason : undefined });
-      toast(decision === "approved" ? "Seller approved — they've been emailed" : "Application rejected — they've been emailed");
+      await client.put(`/admin/vendors/${id}/review`, {
+        decision,
+        note: decision === "rejected" ? reason : undefined,
+      });
+      toast(
+        decision === "approved"
+          ? "Seller approved — they've been emailed"
+          : "Application rejected — they've been emailed"
+      );
       setRejecting(false);
       setReason("");
       await load();
@@ -45,25 +53,28 @@ export default function AdminVendorDetail() {
     }
   }
 
-  const load = () => Promise.all([
-    client.get(`/admin/vendors/${id}`),
-    client.get("/admin/vendors"),
-  ]).then(([v, list]) => {
-    setVendor(v.data);
-    setDefaultRate(list.data.default_commission_rate);
-    setForm({
-      name: v.data.name,
-      email: v.data.email,
-      phone: v.data.phone || "",
-      payout_phone: v.data.payout_phone || "",
-      commission_rate: v.data.commission_rate ?? "",
-      is_active: v.data.is_active,
-    });
-  }).catch(() => setError("Couldn't load this vendor."));
+  const load = () =>
+    Promise.all([client.get(`/admin/vendors/${id}`), client.get("/admin/vendors")])
+      .then(([v, list]) => {
+        setVendor(v.data);
+        setDefaultRate(list.data.default_commission_rate);
+        setForm({
+          name: v.data.name,
+          email: v.data.email,
+          phone: v.data.phone || "",
+          payout_phone: v.data.payout_phone || "",
+          commission_rate: v.data.commission_rate ?? "",
+          is_active: v.data.is_active,
+        });
+      })
+      .catch(() => setError("Couldn't load this vendor."));
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    load();
+  }, [id]);
 
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
+  const set = (k) => (e) =>
+    setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   async function save(e) {
     e.preventDefault();
@@ -104,16 +115,21 @@ export default function AdminVendorDetail() {
 
   async function toggleVendor() {
     const disabling = form.is_active;
-    const ok = await confirm(disabling ? {
-      title: `Disable ${vendor.name}?`,
-      message: "They're signed out, can't log in, and all their products leave the shop. Nothing is deleted.",
-      confirmLabel: "Disable vendor",
-      danger: true,
-    } : {
-      title: `Re-enable ${vendor.name}?`,
-      message: "They can sign in again and their active products return to the shop.",
-      confirmLabel: "Re-enable",
-    });
+    const ok = await confirm(
+      disabling
+        ? {
+            title: `Disable ${vendor.name}?`,
+            message:
+              "They're signed out, can't log in, and all their products leave the shop. Nothing is deleted.",
+            confirmLabel: "Disable vendor",
+            danger: true,
+          }
+        : {
+            title: `Re-enable ${vendor.name}?`,
+            message: "They can sign in again and their active products return to the shop.",
+            confirmLabel: "Re-enable",
+          }
+    );
     if (!ok) return;
     try {
       await client.put(`/admin/vendors/${id}`, { is_active: !disabling });
@@ -124,9 +140,23 @@ export default function AdminVendorDetail() {
     }
   }
 
-  const back = <Link to="/admin/vendors" className="back-link">← Vendors</Link>;
-  if (error) return <DashboardShell area="admin" back={back}><p className="error-text">{error}</p></DashboardShell>;
-  if (!vendor || !form) return <DashboardShell area="admin" back={back}><ListSkeleton rows={3} /></DashboardShell>;
+  const back = (
+    <Link to="/admin/vendors" className="back-link">
+      ← Vendors
+    </Link>
+  );
+  if (error)
+    return (
+      <DashboardShell area="admin" back={back}>
+        <p className="error-text">{error}</p>
+      </DashboardShell>
+    );
+  if (!vendor || !form)
+    return (
+      <DashboardShell area="admin" back={back}>
+        <ListSkeleton rows={3} />
+      </DashboardShell>
+    );
 
   const products = vendor.products || [];
   const shown = products.filter((p) => matches(query, p.name, p.category));
@@ -139,7 +169,9 @@ export default function AdminVendorDetail() {
       </div>
 
       {(vendor.vendor_status !== "approved" || vendor.application_note) && (
-        <div className={`card order-block application${vendor.vendor_status === "pending" ? " application--pending" : ""}`}>
+        <div
+          className={`card order-block application${vendor.vendor_status === "pending" ? " application--pending" : ""}`}
+        >
           <div className="application__head">
             <strong>Seller application</strong>
             <span className="muted">
@@ -148,10 +180,21 @@ export default function AdminVendorDetail() {
             </span>
           </div>
           <dl className="application__facts">
-            <div><dt>Business</dt><dd>{vendor.business_name || "—"}</dd></div>
-            <div><dt>Contact</dt><dd>{vendor.name} · {vendor.email}{vendor.phone && ` · ${vendor.phone}`}</dd></div>
+            <div>
+              <dt>Business</dt>
+              <dd>{vendor.business_name || "—"}</dd>
+            </div>
+            <div>
+              <dt>Contact</dt>
+              <dd>
+                {vendor.name} · {vendor.email}
+                {vendor.phone && ` · ${vendor.phone}`}
+              </dd>
+            </div>
           </dl>
-          {vendor.application_note && <p className="application__note">{vendor.application_note}</p>}
+          {vendor.application_note && (
+            <p className="application__note">{vendor.application_note}</p>
+          )}
           {vendor.review_note && (
             <p className="muted" style={{ margin: "0.6rem 0 0", fontSize: "0.85rem" }}>
               <strong>Review note:</strong> {vendor.review_note}
@@ -160,9 +203,21 @@ export default function AdminVendorDetail() {
 
           {vendor.vendor_status !== "approved" && !rejecting && (
             <div className="btn-row" style={{ marginTop: "0.9rem" }}>
-              <button className="btn btn--primary" disabled={busy} onClick={() => review("approved")}>Approve seller</button>
+              <button
+                className="btn btn--primary"
+                disabled={busy}
+                onClick={() => review("approved")}
+              >
+                Approve seller
+              </button>
               {vendor.vendor_status === "pending" && (
-                <button className="btn btn--ghost" disabled={busy} onClick={() => setRejecting(true)}>Reject</button>
+                <button
+                  className="btn btn--ghost"
+                  disabled={busy}
+                  onClick={() => setRejecting(true)}
+                >
+                  Reject
+                </button>
               )}
             </div>
           )}
@@ -170,15 +225,33 @@ export default function AdminVendorDetail() {
             <div className="inline-form" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <div className="field">
                 <label htmlFor="v-reason">Reason (the applicant will see this)</label>
-                <textarea id="v-reason" className="input" rows={3} maxLength={500} autoFocus
+                <textarea
+                  id="v-reason"
+                  className="input"
+                  rows={3}
+                  maxLength={500}
+                  autoFocus
                   placeholder="E.g. We couldn't verify the business details provided."
-                  value={reason} onChange={(e) => setReason(e.target.value)} />
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
               </div>
               <div className="btn-row">
-                <button className="btn btn--danger" disabled={busy || !reason.trim()} onClick={() => review("rejected")}>
+                <button
+                  className="btn btn--danger"
+                  disabled={busy || !reason.trim()}
+                  onClick={() => review("rejected")}
+                >
                   Reject application
                 </button>
-                <button className="btn btn--ghost" disabled={busy} onClick={() => { setRejecting(false); setReason(""); }}>
+                <button
+                  className="btn btn--ghost"
+                  disabled={busy}
+                  onClick={() => {
+                    setRejecting(false);
+                    setReason("");
+                  }}
+                >
                   Cancel
                 </button>
               </div>
@@ -194,35 +267,67 @@ export default function AdminVendorDetail() {
         </div>
         <div className="field">
           <label htmlFor="v-email">Email</label>
-          <input id="v-email" className="input" type="email" value={form.email} onChange={set("email")} required />
+          <input
+            id="v-email"
+            className="input"
+            type="email"
+            value={form.email}
+            onChange={set("email")}
+            required
+          />
         </div>
         <div className="field">
           <label htmlFor="v-phone">Phone</label>
-          <input id="v-phone" className="input" type="tel" value={form.phone} onChange={set("phone")}
-            placeholder="07XX XXX XXX" />
+          <input
+            id="v-phone"
+            className="input"
+            type="tel"
+            value={form.phone}
+            onChange={set("phone")}
+            placeholder="07XX XXX XXX"
+          />
         </div>
         <div className="field">
           <label htmlFor="v-payout">Payout M-Pesa number</label>
-          <input id="v-payout" className="input" type="tel" value={form.payout_phone} onChange={set("payout_phone")}
-            placeholder="07XX XXX XXX" />
+          <input
+            id="v-payout"
+            className="input"
+            type="tel"
+            value={form.payout_phone}
+            onChange={set("payout_phone")}
+            placeholder="07XX XXX XXX"
+          />
         </div>
         <div className="field">
-          <label htmlFor="v-rate">Commission rate % <span className="muted">(blank = default {defaultRate}%)</span></label>
-          <input id="v-rate" className="input" type="number" min="0" max="100" step="0.5"
-            style={{ maxWidth: 140 }} value={form.commission_rate} onChange={set("commission_rate")}
-            placeholder={String(defaultRate)} />
+          <label htmlFor="v-rate">
+            Commission rate % <span className="muted">(blank = default {defaultRate}%)</span>
+          </label>
+          <input
+            id="v-rate"
+            className="input"
+            type="number"
+            min="0"
+            max="100"
+            step="0.5"
+            style={{ maxWidth: 140 }}
+            value={form.commission_rate}
+            onChange={set("commission_rate")}
+            placeholder={String(defaultRate)}
+          />
         </div>
         <div className="btn-row">
           <button className="btn btn--primary" type="submit" disabled={busy}>
             {busy ? "Saving..." : "Save changes"}
           </button>
-          <button type="button" className={`btn ${vendor.is_active ? "btn--ghost" : "btn--primary"}`}
-            onClick={toggleVendor}>
+          <button
+            type="button"
+            className={`btn ${vendor.is_active ? "btn--ghost" : "btn--primary"}`}
+            onClick={toggleVendor}
+          >
             {vendor.is_active ? "Disable vendor" : "Re-enable vendor"}
           </button>
         </div>
       </form>
-
 
       <div className="section-header">
         <h2 style={{ margin: 0 }}>Products ({products.length})</h2>
@@ -230,7 +335,9 @@ export default function AdminVendorDetail() {
       {products.length > SEARCH_AFTER && (
         <div className="toolbar" style={{ marginTop: "0.75rem" }}>
           <SearchBox value={query} onChange={setQuery} placeholder="Product or category" />
-          <span className="muted toolbar__count">{shown.length} of {products.length}</span>
+          <span className="muted toolbar__count">
+            {shown.length} of {products.length}
+          </span>
         </div>
       )}
       <div className="stack" style={{ marginTop: "0.75rem" }}>
@@ -245,11 +352,20 @@ export default function AdminVendorDetail() {
             </div>
             <div className="order-card__main">
               <strong className="truncate">{p.name}</strong>
-              <span className="muted">{p.discount_active
-                ? <><span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}</>
-                : kes(p.price)} · {p.stock} in stock</span>
+              <span className="muted">
+                {p.discount_active ? (
+                  <>
+                    <span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}
+                  </>
+                ) : (
+                  kes(p.price)
+                )}{" "}
+                · {p.stock} in stock
+              </span>
             </div>
-            {p.discount_active && <span className="badge badge--accent">-{p.discount_percent}%</span>}
+            {p.discount_active && (
+              <span className="badge badge--accent">-{p.discount_percent}%</span>
+            )}
             <span className={`badge ${p.is_active ? "badge--paid" : "badge--cancelled"}`}>
               {p.is_active ? "live" : "hidden"}
             </span>

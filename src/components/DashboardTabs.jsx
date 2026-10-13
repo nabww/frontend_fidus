@@ -6,8 +6,12 @@ export default function DashboardTabs({ base, tabs }) {
   return (
     <nav className="tabs" aria-label="Section navigation">
       {tabs.map((t) => (
-        <NavLink key={t.to} to={`${base}${t.to}`} end={t.to === ""}
-          className={({ isActive }) => `tab${isActive ? " tab--active" : ""}`}>
+        <NavLink
+          key={t.to}
+          to={`${base}${t.to}`}
+          end={t.to === ""}
+          className={({ isActive }) => `tab${isActive ? " tab--active" : ""}`}
+        >
           {t.label}
         </NavLink>
       ))}

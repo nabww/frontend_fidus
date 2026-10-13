@@ -13,15 +13,20 @@ export default function AdminCustomers() {
   const [query, setQuery] = useState("");
 
   async function toggle(c) {
-    const ok = await confirm(c.is_active ? {
-      title: `Disable ${c.name}?`,
-      message: "They're signed out and can't log in or place orders. Their order history is kept.",
-      confirmLabel: "Disable account",
-      danger: true,
-    } : {
-      title: `Re-enable ${c.name}?`,
-      confirmLabel: "Re-enable",
-    });
+    const ok = await confirm(
+      c.is_active
+        ? {
+            title: `Disable ${c.name}?`,
+            message:
+              "They're signed out and can't log in or place orders. Their order history is kept.",
+            confirmLabel: "Disable account",
+            danger: true,
+          }
+        : {
+            title: `Re-enable ${c.name}?`,
+            confirmLabel: "Re-enable",
+          }
+    );
     if (!ok) return;
     try {
       await client.put(`/admin/users/${c.id}/active`, { is_active: !c.is_active });
@@ -38,13 +43,19 @@ export default function AdminCustomers() {
     <DashboardShell area="admin">
       <div className="toolbar">
         <SearchBox value={query} onChange={setQuery} placeholder="Name, email or phone" />
-        {customers && <span className="muted toolbar__count">{shown.length} of {customers.length}</span>}
+        {customers && (
+          <span className="muted toolbar__count">
+            {shown.length} of {customers.length}
+          </span>
+        )}
       </div>
 
       {error && <p className="error-text">{error}</p>}
       {!customers && !error && <ListSkeleton />}
       {shown?.length === 0 && (
-        <ListEmpty query={query.trim()} onClear={() => setQuery("")}>No customers yet.</ListEmpty>
+        <ListEmpty query={query.trim()} onClear={() => setQuery("")}>
+          No customers yet.
+        </ListEmpty>
       )}
 
       <div className="stack">
@@ -53,8 +64,9 @@ export default function AdminCustomers() {
             <div className="order-card__main">
               <strong>{c.name}</strong>
               <span className="muted truncate">
-                {c.email}{c.phone && ` · ${c.phone}`} · {c.order_count} order{c.order_count === 1 ? "" : "s"} ·
-                joined {shortDate(c.created_at || c.createdAt)}
+                {c.email}
+                {c.phone && ` · ${c.phone}`} · {c.order_count} order{c.order_count === 1 ? "" : "s"}{" "}
+                · joined {shortDate(c.created_at || c.createdAt)}
               </span>
             </div>
             <span className={`badge ${c.is_active ? "badge--paid" : "badge--cancelled"}`}>

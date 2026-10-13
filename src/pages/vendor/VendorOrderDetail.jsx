@@ -17,13 +17,20 @@ export default function VendorOrderDetail() {
   const [tracking, setTracking] = useState({ courier: "", tracking_number: "" });
   const [editingTracking, setEditingTracking] = useState(false);
 
-  const load = () => client.get(`/orders/vendor/${id}`)
-    .then((res) => {
-      setOrder(res.data);
-      setTracking({ courier: res.data.courier || "", tracking_number: res.data.tracking_number || "" });
-    })
-    .catch(() => setError("Couldn't load this order."));
-  useEffect(() => { load(); }, [id]);
+  const load = () =>
+    client
+      .get(`/orders/vendor/${id}`)
+      .then((res) => {
+        setOrder(res.data);
+        setTracking({
+          courier: res.data.courier || "",
+          tracking_number: res.data.tracking_number || "",
+        });
+      })
+      .catch(() => setError("Couldn't load this order."));
+  useEffect(() => {
+    load();
+  }, [id]);
 
   // "Mark shipped" from the orders list lands here with the courier form open
   useEffect(() => {
@@ -34,7 +41,8 @@ export default function VendorOrderDetail() {
     if (nextStatus === "cancelled") {
       const ok = await confirm({
         title: `Cancel order #${order.order_no}?`,
-        message: "Stock goes back on the shelf. The customer is emailed — a paid order needs a manual M-Pesa refund.",
+        message:
+          "Stock goes back on the shelf. The customer is emailed — a paid order needs a manual M-Pesa refund.",
         confirmLabel: "Cancel order",
         danger: true,
       });
@@ -49,7 +57,10 @@ export default function VendorOrderDetail() {
       setShipping(false);
       await load();
     } catch (err) {
-      toast(err.response?.data?.message || "Couldn't update the order", { type: "error", duration: 3000 });
+      toast(err.response?.data?.message || "Couldn't update the order", {
+        type: "error",
+        duration: 3000,
+      });
     } finally {
       setBusy(false);
     }
@@ -70,9 +81,23 @@ export default function VendorOrderDetail() {
     }
   }
 
-  const back = <Link to="/vendor/orders" className="back-link">← Orders</Link>;
-  if (error) return <DashboardShell area="vendor" back={back}><p className="error-text">{error}</p></DashboardShell>;
-  if (!order) return <DashboardShell area="vendor" back={back}><ListSkeleton rows={3} /></DashboardShell>;
+  const back = (
+    <Link to="/vendor/orders" className="back-link">
+      ← Orders
+    </Link>
+  );
+  if (error)
+    return (
+      <DashboardShell area="vendor" back={back}>
+        <p className="error-text">{error}</p>
+      </DashboardShell>
+    );
+  if (!order)
+    return (
+      <DashboardShell area="vendor" back={back}>
+        <ListSkeleton rows={3} />
+      </DashboardShell>
+    );
 
   const myTotal = vendorTotal(order);
   const isPickup = order.fulfillment_type === "pickup";
@@ -99,7 +124,8 @@ export default function VendorOrderDetail() {
         <div className="steps">
           {steps.map((s, i) => (
             <div key={s} className={`step${i <= stepIndex ? " step--done" : ""}`}>
-              <span className="step__dot" /><span className="step__label">{s}</span>
+              <span className="step__dot" />
+              <span className="step__label">{s}</span>
             </div>
           ))}
         </div>
@@ -111,11 +137,21 @@ export default function VendorOrderDetail() {
           <span>{isPickup ? "Pickup (direct sale)" : "Delivery"}</span>
         </div>
         {!isPickup && order.shipping_address && (
-          <div className="row"><span className="muted">Deliver to</span><span>{order.shipping_address}</span></div>
+          <div className="row">
+            <span className="muted">Deliver to</span>
+            <span>{order.shipping_address}</span>
+          </div>
         )}
-        <div className="row"><span className="muted">Customer</span>
-          <span>{order.customer?.name} · {order.customer_phone}</span></div>
-        <div className="row"><span className="muted">Receipts go to</span><span>{order.customer_email}</span></div>
+        <div className="row">
+          <span className="muted">Customer</span>
+          <span>
+            {order.customer?.name} · {order.customer_phone}
+          </span>
+        </div>
+        <div className="row">
+          <span className="muted">Receipts go to</span>
+          <span>{order.customer_email}</span>
+        </div>
       </div>
 
       {!isPickup && hasTracking && !editingTracking && (
@@ -129,46 +165,73 @@ export default function VendorOrderDetail() {
             <span style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
               {order.tracking_number || "—"}
               {order.status === "shipped" && (
-                <button className="link-btn" onClick={() => setEditingTracking(true)}>Edit</button>
+                <button className="link-btn" onClick={() => setEditingTracking(true)}>
+                  Edit
+                </button>
               )}
             </span>
           </div>
         </div>
       )}
       {!isPickup && editingTracking && (
-        <form className="card" style={{ padding: "1.1rem", marginTop: "0.75rem" }} onSubmit={saveTracking}>
+        <form
+          className="card"
+          style={{ padding: "1.1rem", marginTop: "0.75rem" }}
+          onSubmit={saveTracking}
+        >
           <div className="field">
             <label htmlFor="courier-edit">Courier</label>
-            <input id="courier-edit" className="input" placeholder="e.g. Fargo, G4S, Sendy"
+            <input
+              id="courier-edit"
+              className="input"
+              placeholder="e.g. Fargo, G4S, Sendy"
               value={tracking.courier}
-              onChange={(e) => setTracking({ ...tracking, courier: e.target.value })} />
+              onChange={(e) => setTracking({ ...tracking, courier: e.target.value })}
+            />
           </div>
           <div className="field" style={{ marginTop: "0.75rem" }}>
             <label htmlFor="tracking-edit">Tracking number</label>
-            <input id="tracking-edit" className="input" placeholder="Waybill / tracking ref"
+            <input
+              id="tracking-edit"
+              className="input"
+              placeholder="Waybill / tracking ref"
               value={tracking.tracking_number}
-              onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })} />
+              onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })}
+            />
           </div>
           <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.9rem" }}>
-            <button className="btn btn--primary btn--sm" type="submit" disabled={busy}>Save</button>
-            <button type="button" className="btn btn--ghost btn--sm"
-              onClick={() => setEditingTracking(false)}>Cancel</button>
+            <button className="btn btn--primary btn--sm" type="submit" disabled={busy}>
+              Save
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => setEditingTracking(false)}
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
 
-      <h2 className="section-title" style={{ marginTop: "1.5rem" }}>Your items</h2>
+      <h2 className="section-title" style={{ marginTop: "1.5rem" }}>
+        Your items
+      </h2>
       <div className="stack">
         {order.items.map((i) => (
           <div key={i.id} className="card cart-item">
             <div className="cart-item__thumb">
-              {i.product?.image_url
-                ? <img src={imageUrl(i.product.image_url)} alt="" loading="lazy" />
-                : "📦"}
+              {i.product?.image_url ? (
+                <img src={imageUrl(i.product.image_url)} alt="" loading="lazy" />
+              ) : (
+                "📦"
+              )}
             </div>
             <div className="cart-item__info">
               <span className="cart-item__name">{i.product?.name || "Removed product"}</span>
-              <span className="muted">{i.quantity} × {kes(i.unit_price)}</span>
+              <span className="muted">
+                {i.quantity} × {kes(i.unit_price)}
+              </span>
             </div>
             <span className="cart-item__total">{kes(Number(i.unit_price) * i.quantity)}</span>
           </div>
@@ -182,28 +245,44 @@ export default function VendorOrderDetail() {
 
       {/* Ship form: courier + tracking captured inline, both optional */}
       {canShip && shipping && (
-        <form className="card" style={{ padding: "1.1rem", marginTop: "1rem" }}
-          onSubmit={(e) => { e.preventDefault(); act("shipped"); }}>
+        <form
+          className="card"
+          style={{ padding: "1.1rem", marginTop: "1rem" }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            act("shipped");
+          }}
+        >
           <p className="muted" style={{ margin: "0 0 0.75rem", fontSize: "0.88rem" }}>
             Optional — the customer sees these on their order page and in the shipping email.
           </p>
           <div className="field">
             <label htmlFor="courier">Courier</label>
-            <input id="courier" className="input" placeholder="e.g. Fargo, G4S, Sendy"
+            <input
+              id="courier"
+              className="input"
+              placeholder="e.g. Fargo, G4S, Sendy"
               value={tracking.courier}
-              onChange={(e) => setTracking({ ...tracking, courier: e.target.value })} />
+              onChange={(e) => setTracking({ ...tracking, courier: e.target.value })}
+            />
           </div>
           <div className="field" style={{ marginTop: "0.75rem" }}>
             <label htmlFor="tracking">Tracking number</label>
-            <input id="tracking" className="input" placeholder="Waybill / tracking ref"
+            <input
+              id="tracking"
+              className="input"
+              placeholder="Waybill / tracking ref"
               value={tracking.tracking_number}
-              onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })} />
+              onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })}
+            />
           </div>
           <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.9rem" }}>
             <button className="btn btn--primary" type="submit" disabled={busy}>
               {busy ? "Saving..." : "Confirm shipped"}
             </button>
-            <button type="button" className="btn btn--ghost" onClick={() => setShipping(false)}>Back</button>
+            <button type="button" className="btn btn--ghost" onClick={() => setShipping(false)}>
+              Back
+            </button>
           </div>
         </form>
       )}

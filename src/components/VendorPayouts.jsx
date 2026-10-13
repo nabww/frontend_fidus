@@ -5,7 +5,8 @@ import { useToast } from "../context/ToastContext";
 import { kes, PAYOUT_STATUS_LABELS } from "../utils/format";
 
 // Mask all but the last 3 digits of the payout number
-const masked = (phone) => (phone ? `${"•".repeat(Math.max(0, phone.length - 3))}${phone.slice(-3)}` : "");
+const masked = (phone) =>
+  phone ? `${"•".repeat(Math.max(0, phone.length - 3))}${phone.slice(-3)}` : "";
 
 export default function VendorPayouts() {
   const { toast } = useToast();
@@ -16,12 +17,15 @@ export default function VendorPayouts() {
   const [busy, setBusy] = useState(false);
   const [selectedPayoutId, setSelectedPayoutId] = useState(null);
 
-  const load = () => client.get("/payouts/mine").then((res) => {
-    setSummary(res.data);
-    if (!res.data.payout_phone) setEditing(true);
-  });
+  const load = () =>
+    client.get("/payouts/mine").then((res) => {
+      setSummary(res.data);
+      if (!res.data.payout_phone) setEditing(true);
+    });
 
-  useEffect(() => { load().catch(() => setError("Couldn't load payouts.")); }, []);
+  useEffect(() => {
+    load().catch(() => setError("Couldn't load payouts."));
+  }, []);
 
   async function savePhone(e) {
     e.preventDefault();
@@ -54,8 +58,8 @@ export default function VendorPayouts() {
         </span>
       </div>
       <p className="muted" style={{ margin: "0.3rem 0 0", fontSize: "0.85rem" }}>
-        Pickup and direct sales are paid the next morning. Delivered orders are paid
-        the morning after delivery is confirmed.
+        Pickup and direct sales are paid the next morning. Delivered orders are paid the morning
+        after delivery is confirmed.
       </p>
 
       <div className="stat-cards">
@@ -72,7 +76,9 @@ export default function VendorPayouts() {
           {summary.payout_phone && !editing ? (
             <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
               <strong style={{ fontSize: "1.1rem" }}>{masked(summary.payout_phone)}</strong>
-              <button className="link-btn" onClick={() => setEditing(true)}>Change</button>
+              <button className="link-btn" onClick={() => setEditing(true)}>
+                Change
+              </button>
             </div>
           ) : (
             <strong style={{ fontSize: "1rem", color: "var(--danger)" }}>Not set</strong>
@@ -89,32 +95,58 @@ export default function VendorPayouts() {
           </p>
           <div className="field">
             <label htmlFor="payout-phone">M-Pesa number</label>
-            <input id="payout-phone" className="input" type="tel" inputMode="tel" required
-              placeholder="07XX XXX XXX" value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <input
+              id="payout-phone"
+              className="input"
+              type="tel"
+              inputMode="tel"
+              required
+              placeholder="07XX XXX XXX"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
           </div>
           <div className="field">
             <label htmlFor="payout-confirm">Confirm number</label>
-            <input id="payout-confirm" className="input" type="tel" inputMode="tel" required
-              value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-              onPaste={(e) => e.preventDefault()} />
+            <input
+              id="payout-confirm"
+              className="input"
+              type="tel"
+              inputMode="tel"
+              required
+              value={form.confirm}
+              onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+              onPaste={(e) => e.preventDefault()}
+            />
           </div>
           <div style={{ display: "flex", gap: "0.6rem" }}>
             <button className="btn btn--primary" type="submit" disabled={busy}>
               {busy ? "Saving..." : "Save number"}
             </button>
             {summary.payout_phone && (
-              <button type="button" className="btn btn--ghost"
-                onClick={() => { setEditing(false); setError(""); }}>Cancel</button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => {
+                  setEditing(false);
+                  setError("");
+                }}
+              >
+                Cancel
+              </button>
             )}
           </div>
           {error && <p className="error-text">{error}</p>}
         </form>
       )}
 
-      <h2 className="section-title" style={{ marginTop: "1.5rem" }}>Payout history</h2>
+      <h2 className="section-title" style={{ marginTop: "1.5rem" }}>
+        Payout history
+      </h2>
       {summary.payouts.length === 0 ? (
-        <p className="muted" style={{ fontSize: "0.9rem" }}>No payouts yet.</p>
+        <p className="muted" style={{ fontSize: "0.9rem" }}>
+          No payouts yet.
+        </p>
       ) : (
         <div className="stack">
           {summary.payouts.map((p) => (
@@ -128,21 +160,21 @@ export default function VendorPayouts() {
                 <strong>{kes(p.net_amount)}</strong>
                 <span className="muted">
                   {new Date(p.created_at || p.createdAt).toLocaleDateString()} · {p.item_count} item
-                  {p.item_count === 1 ? "" : "s"} · {kes(p.gross_amount)} less {Number(p.commission_rate)}%
+                  {p.item_count === 1 ? "" : "s"} · {kes(p.gross_amount)} less{" "}
+                  {Number(p.commission_rate)}%
                   {p.mpesa_transaction_id && ` · Ref ${p.mpesa_transaction_id}`}
                 </span>
               </div>
-              <span className={`badge badge--${p.status}`}>{PAYOUT_STATUS_LABELS[p.status] || p.status}</span>
+              <span className={`badge badge--${p.status}`}>
+                {PAYOUT_STATUS_LABELS[p.status] || p.status}
+              </span>
             </div>
           ))}
         </div>
       )}
 
       {selectedPayoutId && (
-        <PayoutDetailModal
-          payoutId={selectedPayoutId}
-          onClose={() => setSelectedPayoutId(null)}
-        />
+        <PayoutDetailModal payoutId={selectedPayoutId} onClose={() => setSelectedPayoutId(null)} />
       )}
     </section>
   );

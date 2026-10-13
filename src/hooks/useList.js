@@ -14,10 +14,18 @@ export default function useList(path, params = {}) {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    client.get(path, { params: JSON.parse(key), signal: controller.signal })
-      .then((res) => { setData(res.data); setError(""); })
-      .catch((err) => { if (!axios.isCancel(err)) setError("Couldn't load this list."); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    client
+      .get(path, { params: JSON.parse(key), signal: controller.signal })
+      .then((res) => {
+        setData(res.data);
+        setError("");
+      })
+      .catch((err) => {
+        if (!axios.isCancel(err)) setError("Couldn't load this list.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => controller.abort();
   }, [path, key, tick]);
 

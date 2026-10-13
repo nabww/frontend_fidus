@@ -24,7 +24,9 @@ export default function Footer() {
       <div className="footer__inner">
         <div className="footer__top">
           <div className="footer__brand">
-            <Link to="/" className="navbar__brand">Fidus<span>.</span></Link>
+            <Link to="/" className="navbar__brand">
+              Fidus<span>.</span>
+            </Link>
             <p className="muted">Electronics, delivered across Kenya.</p>
           </div>
           <nav className="footer__links" aria-label="Footer">
@@ -41,7 +43,9 @@ export default function Footer() {
         </div>
         <div className="footer__bottom">
           <span>© {new Date().getFullYear()} Fidus</span>
-          <span>Designed and Developed by <strong>Tezi</strong></span>
+          <span>
+            Designed and Developed by <strong>Tezi</strong>
+          </span>
         </div>
       </div>
     </footer>

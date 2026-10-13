@@ -34,24 +34,31 @@ export default function ImageManager({ value, onChange }) {
   async function addFiles(fileList) {
     const images = [...fileList].filter((f) => f.type.startsWith("image/"));
     const picked = images.slice(0, Math.max(0, remaining));
-    if (images.length < fileList.length) toast("Some files were skipped — images only", { type: "error" });
-    else if (picked.length < images.length) toast(`Only ${MAX_IMAGES} images per product`, { type: "error" });
+    if (images.length < fileList.length)
+      toast("Some files were skipped — images only", { type: "error" });
+    else if (picked.length < images.length)
+      toast(`Only ${MAX_IMAGES} images per product`, { type: "error" });
     if (!picked.length) return;
 
     setProcessing(true);
     const files = await Promise.all(picked.map(shrinkImage)); // big phone photos → ≤1600px JPEG
     setProcessing(false);
     const valid = files.filter((f) => f.size <= MAX_BYTES);
-    if (valid.length < files.length) toast("Some images were over 5MB and skipped", { type: "error" });
+    if (valid.length < files.length)
+      toast("Some images were over 5MB and skipped", { type: "error" });
     const added = valid.map((file) => ({
-      key: `n${keySeq++}`, kind: "new", file, preview: URL.createObjectURL(file),
+      key: `n${keySeq++}`,
+      kind: "new",
+      file,
+      preview: URL.createObjectURL(file),
     }));
     if (added.length) onChange([...value, ...added]);
   }
 
   function addUrl() {
     const url = urlDraft.trim();
-    if (!/^https?:\/\//i.test(url)) return toast("Image URLs must start with http:// or https://", { type: "error" });
+    if (!/^https?:\/\//i.test(url))
+      return toast("Image URLs must start with http:// or https://", { type: "error" });
     if (remaining <= 0) return toast(`Only ${MAX_IMAGES} images per product`, { type: "error" });
     onChange([...value, { key: `e${keySeq++}`, kind: "existing", url }]);
     setUrlDraft("");
@@ -72,15 +79,43 @@ export default function ImageManager({ value, onChange }) {
         <div className="image-manager__grid">
           {value.map((entry, i) => (
             <div key={entry.key} className="image-tile">
-              <img src={entry.kind === "new" ? entry.preview : imageUrl(entry.url)} alt={`Image ${i + 1}`} />
+              <img
+                src={entry.kind === "new" ? entry.preview : imageUrl(entry.url)}
+                alt={`Image ${i + 1}`}
+              />
               {i === 0 && <span className="image-tile__cover">Cover</span>}
               <div className="image-tile__actions">
-                <button type="button" aria-label="Move left" disabled={i === 0} onClick={() => move(i, i - 1)}>‹</button>
+                <button
+                  type="button"
+                  aria-label="Move left"
+                  disabled={i === 0}
+                  onClick={() => move(i, i - 1)}
+                >
+                  ‹
+                </button>
                 {i !== 0 && (
-                  <button type="button" className="image-tile__make-cover" onClick={() => move(i, 0)}>Cover</button>
+                  <button
+                    type="button"
+                    className="image-tile__make-cover"
+                    onClick={() => move(i, 0)}
+                  >
+                    Cover
+                  </button>
                 )}
-                <button type="button" aria-label="Move right" disabled={i === value.length - 1} onClick={() => move(i, i + 1)}>›</button>
-                <button type="button" aria-label="Remove image" className="image-tile__remove" onClick={() => remove(i)}>
+                <button
+                  type="button"
+                  aria-label="Move right"
+                  disabled={i === value.length - 1}
+                  onClick={() => move(i, i + 1)}
+                >
+                  ›
+                </button>
+                <button
+                  type="button"
+                  aria-label="Remove image"
+                  className="image-tile__remove"
+                  onClick={() => remove(i)}
+                >
                   <TrashIcon />
                 </button>
               </div>
@@ -92,36 +127,87 @@ export default function ImageManager({ value, onChange }) {
       <div
         className={`image-drop ${remaining <= 0 ? "is-full" : ""}`}
         onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); if (remaining > 0) addFiles(e.dataTransfer.files); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (remaining > 0) addFiles(e.dataTransfer.files);
+        }}
       >
         <div className="image-drop__buttons">
           {/* capture="environment" opens the rear camera directly on phones */}
-          <button type="button" className="btn btn--primary touch-only" disabled={remaining <= 0 || processing}
-            onClick={() => cameraInput.current?.click()}>
+          <button
+            type="button"
+            className="btn btn--primary touch-only"
+            disabled={remaining <= 0 || processing}
+            onClick={() => cameraInput.current?.click()}
+          >
             <CameraIcon /> Take photo
           </button>
-          <button type="button" className="btn btn--ghost" disabled={remaining <= 0 || processing}
-            onClick={() => fileInput.current?.click()}>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            disabled={remaining <= 0 || processing}
+            onClick={() => fileInput.current?.click()}
+          >
             {processing ? "Preparing…" : value.length ? "Add more images" : "Add images"}
           </button>
         </div>
         <span className="muted">
-          {remaining > 0
-            ? <><span className="hide-touch">or drop them here · </span>{remaining} of {MAX_IMAGES} left</>
-            : `${MAX_IMAGES} image limit reached`}
+          {remaining > 0 ? (
+            <>
+              <span className="hide-touch">or drop them here · </span>
+              {remaining} of {MAX_IMAGES} left
+            </>
+          ) : (
+            `${MAX_IMAGES} image limit reached`
+          )}
         </span>
-        <input ref={fileInput} type="file" accept="image/*" multiple hidden
-          onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
-        <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden
-          onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => {
+            addFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={cameraInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={(e) => {
+            addFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
       </div>
 
       {remaining > 0 && (
         <div className="image-manager__url">
-          <input className="input" type="url" placeholder="…or paste an image URL" value={urlDraft}
+          <input
+            className="input"
+            type="url"
+            placeholder="…or paste an image URL"
+            value={urlDraft}
             onChange={(e) => setUrlDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }} />
-          <button type="button" className="btn btn--ghost" onClick={addUrl} disabled={!urlDraft.trim()}>Add</button>
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addUrl();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={addUrl}
+            disabled={!urlDraft.trim()}
+          >
+            Add
+          </button>
         </div>
       )}
     </div>

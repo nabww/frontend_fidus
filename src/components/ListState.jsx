@@ -18,10 +18,26 @@ export function ListEmpty({ query, filtered, onClear, children }) {
   if (query || filtered) {
     return (
       <div className="list-empty">
-        <p>{query ? <>No matches for <strong>“{query}”</strong>.</> : "Nothing matches this filter."}</p>
-        {onClear && <button className="btn btn--ghost btn--sm" onClick={onClear}>Clear</button>}
+        <p>
+          {query ? (
+            <>
+              No matches for <strong>“{query}”</strong>.
+            </>
+          ) : (
+            "Nothing matches this filter."
+          )}
+        </p>
+        {onClear && (
+          <button className="btn btn--ghost btn--sm" onClick={onClear}>
+            Clear
+          </button>
+        )}
       </div>
     );
   }
-  return <div className="list-empty"><p>{children}</p></div>;
+  return (
+    <div className="list-empty">
+      <p>{children}</p>
+    </div>
+  );
 }

@@ -30,8 +30,14 @@ export default function ImageGallery({ images, alt }) {
   }
 
   function onKeyDown(e) {
-    if (e.key === "ArrowRight") { e.preventDefault(); goTo(index + 1); }
-    if (e.key === "ArrowLeft") { e.preventDefault(); goTo(index - 1); }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goTo(index + 1);
+    }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goTo(index - 1);
+    }
   }
 
   if (count === 0) return <div className="pd-image">◆</div>;
@@ -55,18 +61,39 @@ export default function ImageGallery({ images, alt }) {
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${count}`}
             >
-              <img src={imageUrl(url)} alt={`${alt} — image ${i + 1}`} loading={i === 0 ? "eager" : "lazy"} draggable="false" />
+              <img
+                src={imageUrl(url)}
+                alt={`${alt} — image ${i + 1}`}
+                loading={i === 0 ? "eager" : "lazy"}
+                draggable="false"
+              />
             </div>
           ))}
         </div>
 
         {count > 1 && (
           <>
-            <button type="button" className="gallery__nav gallery__nav--prev" aria-label="Previous image"
-              disabled={index === 0} onClick={() => goTo(index - 1)}>‹</button>
-            <button type="button" className="gallery__nav gallery__nav--next" aria-label="Next image"
-              disabled={index === count - 1} onClick={() => goTo(index + 1)}>›</button>
-            <span className="gallery__counter" aria-live="polite">{index + 1} / {count}</span>
+            <button
+              type="button"
+              className="gallery__nav gallery__nav--prev"
+              aria-label="Previous image"
+              disabled={index === 0}
+              onClick={() => goTo(index - 1)}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className="gallery__nav gallery__nav--next"
+              aria-label="Next image"
+              disabled={index === count - 1}
+              onClick={() => goTo(index + 1)}
+            >
+              ›
+            </button>
+            <span className="gallery__counter" aria-live="polite">
+              {index + 1} / {count}
+            </span>
           </>
         )}
       </div>
@@ -75,8 +102,13 @@ export default function ImageGallery({ images, alt }) {
         <>
           <div className="gallery__thumbs">
             {images.map((url, i) => (
-              <button key={url} type="button" aria-label={`Show image ${i + 1}`}
-                className={`gallery__thumb ${i === index ? "is-active" : ""}`} onClick={() => goTo(i)}>
+              <button
+                key={url}
+                type="button"
+                aria-label={`Show image ${i + 1}`}
+                className={`gallery__thumb ${i === index ? "is-active" : ""}`}
+                onClick={() => goTo(i)}
+              >
                 <img src={imageUrl(url)} alt="" loading="lazy" />
               </button>
             ))}

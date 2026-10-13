@@ -20,7 +20,14 @@ export default function Orders() {
   const [query, setQuery] = useState("");
 
   const shown = orders?.filter((o) =>
-    matches(query, `#${o.order_no}`, o.status, STATUS_LABELS[o.status], o.items?.map((i) => i.product?.name).join(" ")));
+    matches(
+      query,
+      `#${o.order_no}`,
+      o.status,
+      STATUS_LABELS[o.status],
+      o.items?.map((i) => i.product?.name).join(" ")
+    )
+  );
 
   return (
     <div className="page">
@@ -35,7 +42,9 @@ export default function Orders() {
       {orders?.length === 0 && (
         <div className="empty-state" style={{ padding: "2.5rem 0" }}>
           <p className="muted">No orders yet.</p>
-          <Link to="/" className="btn btn--ghost">Browse products</Link>
+          <Link to="/" className="btn btn--ghost">
+            Browse products
+          </Link>
         </div>
       )}
       {orders?.length > 0 && shown.length === 0 && (
@@ -52,7 +61,9 @@ export default function Orders() {
                   {o.items?.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
                 </span>
               </div>
-              <span className={`badge badge--${o.status}`}>{STATUS_LABELS[o.status] || o.status}</span>
+              <span className={`badge badge--${o.status}`}>
+                {STATUS_LABELS[o.status] || o.status}
+              </span>
               <span className="order-card__total">{kes(o.total)}</span>
             </div>
             <ItemTiles items={o.items} />

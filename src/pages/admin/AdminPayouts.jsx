@@ -20,7 +20,10 @@ export default function AdminPayouts() {
   const [query, setQuery] = useState("");
   const [selectedPayoutId, setSelectedPayoutId] = useState(null);
 
-  const reload = () => { previewList.reload(); historyList.reload(); };
+  const reload = () => {
+    previewList.reload();
+    historyList.reload();
+  };
   const ready = preview?.vendors.filter((v) => !v.blocker) || [];
   const readyTotal = ready.reduce((s, v) => s + v.net, 0);
 
@@ -35,9 +38,13 @@ export default function AdminPayouts() {
     try {
       const { data } = await client.post("/payouts/run");
       const sent = data.results.filter((r) => r.status === "processing").length;
-      const problems = data.results.filter((r) => r.error || r.status === "failed" || r.status === "review").length;
+      const problems = data.results.filter(
+        (r) => r.error || r.status === "failed" || r.status === "review"
+      ).length;
       toast(
-        problems ? `${sent} sent, ${problems} need attention` : `${sent} payout${sent === 1 ? "" : "s"} sent`,
+        problems
+          ? `${sent} sent, ${problems} need attention`
+          : `${sent} payout${sent === 1 ? "" : "s"} sent`,
         { type: problems ? "error" : "success", duration: 3000 }
       );
       reload();
@@ -49,16 +56,21 @@ export default function AdminPayouts() {
   }
 
   async function resolve(payout, outcome) {
-    const ok = await confirm(outcome === "paid" ? {
-      title: "Mark as paid?",
-      message: `Only do this if ${kes(payout.net_amount)} reached ${payout.vendor?.name}'s M-Pesa (check the M-Pesa portal).`,
-      confirmLabel: "Mark paid",
-    } : {
-      title: "Mark as failed?",
-      message: "The items go back into the next payout run. Only do this if the money did NOT arrive.",
-      confirmLabel: "Mark failed",
-      danger: true,
-    });
+    const ok = await confirm(
+      outcome === "paid"
+        ? {
+            title: "Mark as paid?",
+            message: `Only do this if ${kes(payout.net_amount)} reached ${payout.vendor?.name}'s M-Pesa (check the M-Pesa portal).`,
+            confirmLabel: "Mark paid",
+          }
+        : {
+            title: "Mark as failed?",
+            message:
+              "The items go back into the next payout run. Only do this if the money did NOT arrive.",
+            confirmLabel: "Mark failed",
+            danger: true,
+          }
+    );
     if (!ok) return;
     try {
       await client.post(`/payouts/${payout.id}/resolve`, { outcome });
@@ -70,7 +82,9 @@ export default function AdminPayouts() {
   }
 
   const needsReview = payouts.filter((p) => p.status === "review");
-  const shown = payouts.filter((p) => matches(query, p.vendor?.name, p.mpesa_transaction_id, p.status, p.triggered_by));
+  const shown = payouts.filter((p) =>
+    matches(query, p.vendor?.name, p.mpesa_transaction_id, p.status, p.triggered_by)
+  );
 
   return (
     <DashboardShell area="admin">
@@ -83,19 +97,31 @@ export default function AdminPayouts() {
             <div>
               <h2 style={{ margin: 0 }}>Ready for payout</h2>
               <p className="muted list-hint" style={{ margin: "0.2rem 0 0" }}>
-                Delivered items are payable immediately · default commission {preview.default_commission_rate}%
-                {readyTotal > 0 && <> · Make sure the B2C account holds at least {kes(readyTotal)}</>}
+                Delivered items are payable immediately · default commission{" "}
+                {preview.default_commission_rate}%
+                {readyTotal > 0 && (
+                  <> · Make sure the B2C account holds at least {kes(readyTotal)}</>
+                )}
               </p>
             </div>
-            <button className="btn btn--primary" onClick={runNow} disabled={running || ready.length === 0}>
-              {running ? "Sending..." : ready.length ? `Pay out ${kes(readyTotal)}` : "Nothing to pay out"}
+            <button
+              className="btn btn--primary"
+              onClick={runNow}
+              disabled={running || ready.length === 0}
+            >
+              {running
+                ? "Sending..."
+                : ready.length
+                  ? `Pay out ${kes(readyTotal)}`
+                  : "Nothing to pay out"}
             </button>
           </div>
 
           {needsReview.length > 0 && (
             <div className="notice notice--warn" style={{ marginTop: "1rem" }}>
-              {needsReview.length} payout{needsReview.length === 1 ? "" : "s"} need review — Safaricom didn't
-              confirm the outcome. Check the M-Pesa portal, then mark each one paid or failed below.
+              {needsReview.length} payout{needsReview.length === 1 ? "" : "s"} need review —
+              Safaricom didn't confirm the outcome. Check the M-Pesa portal, then mark each one paid
+              or failed below.
             </div>
           )}
 
@@ -106,12 +132,15 @@ export default function AdminPayouts() {
                 <div className="order-card__main">
                   <strong>{v.vendor.name}</strong>
                   <span className="muted">
-                    {v.item_count} item{v.item_count === 1 ? "" : "s"} · {kes(v.gross)} gross − {v.commission_rate}%
+                    {v.item_count} item{v.item_count === 1 ? "" : "s"} · {kes(v.gross)} gross −{" "}
+                    {v.commission_rate}%
                   </span>
                 </div>
-                {v.blocker
-                  ? <span className="badge badge--failed">{v.blocker}</span>
-                  : <span className="order-card__total">{kes(v.net)}</span>}
+                {v.blocker ? (
+                  <span className="badge badge--failed">{v.blocker}</span>
+                ) : (
+                  <span className="order-card__total">{kes(v.net)}</span>
+                )}
               </div>
             ))}
           </div>
@@ -121,8 +150,14 @@ export default function AdminPayouts() {
           </div>
           {payouts.length > SEARCH_AFTER && (
             <div className="toolbar" style={{ marginTop: "0.75rem" }}>
-              <SearchBox value={query} onChange={setQuery} placeholder="Vendor, M-Pesa ref or status" />
-              <span className="muted toolbar__count">{shown.length} of {payouts.length}</span>
+              <SearchBox
+                value={query}
+                onChange={setQuery}
+                placeholder="Vendor, M-Pesa ref or status"
+              />
+              <span className="muted toolbar__count">
+                {shown.length} of {payouts.length}
+              </span>
             </div>
           )}
           <div className="stack" style={{ marginTop: "0.75rem" }}>
@@ -138,18 +173,26 @@ export default function AdminPayouts() {
                 onClick={() => setSelectedPayoutId(p.id)}
               >
                 <div className="order-card__main">
-                  <strong>{p.vendor?.name} · {kes(p.net_amount)}</strong>
+                  <strong>
+                    {p.vendor?.name} · {kes(p.net_amount)}
+                  </strong>
                   <span className="muted truncate">
                     {new Date(p.created_at || p.createdAt).toLocaleString()} · {p.triggered_by}
                     {p.mpesa_transaction_id && ` · Ref ${p.mpesa_transaction_id}`}
                     {p.result_desc && p.status !== "paid" && ` · ${p.result_desc}`}
                   </span>
                 </div>
-                <span className={`badge badge--${p.status}`}>{PAYOUT_STATUS_LABELS[p.status] || p.status}</span>
+                <span className={`badge badge--${p.status}`}>
+                  {PAYOUT_STATUS_LABELS[p.status] || p.status}
+                </span>
                 {p.status === "review" && (
                   <div className="order-card__actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="btn btn--ghost btn--sm" onClick={() => resolve(p, "failed")}>Failed</button>
-                    <button className="btn btn--primary btn--sm" onClick={() => resolve(p, "paid")}>Paid</button>
+                    <button className="btn btn--ghost btn--sm" onClick={() => resolve(p, "failed")}>
+                      Failed
+                    </button>
+                    <button className="btn btn--primary btn--sm" onClick={() => resolve(p, "paid")}>
+                      Paid
+                    </button>
                   </div>
                 )}
               </div>

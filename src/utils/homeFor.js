@@ -1,5 +1,6 @@
 // A vendor can only sell once an admin has approved their application
-export const isApprovedVendor = (user) => user?.role === "vendor" && user.vendor_status === "approved";
+export const isApprovedVendor = (user) =>
+  user?.role === "vendor" && user.vendor_status === "approved";
 
 // Landing page for a user right after they sign in
 export function homeFor(user) {

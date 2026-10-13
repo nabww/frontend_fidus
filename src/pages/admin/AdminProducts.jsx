@@ -20,7 +20,12 @@ export default function AdminProducts() {
   const [active, setActive] = useState("");
   const [query, setQuery] = useState("");
   const q = useDebounced(query).trim();
-  const { data: products, loading, error, reload } = useList("/admin/products", {
+  const {
+    data: products,
+    loading,
+    error,
+    reload,
+  } = useList("/admin/products", {
     active: active || undefined,
     q: q || undefined,
   });
@@ -87,7 +92,14 @@ export default function AdminProducts() {
       {error && <p className="error-text">{error}</p>}
       {!products && !error && <ListSkeleton />}
       {products?.length === 0 && (
-        <ListEmpty query={q} filtered={active} onClear={() => { setQuery(""); setActive(""); }}>
+        <ListEmpty
+          query={q}
+          filtered={active}
+          onClear={() => {
+            setQuery("");
+            setActive("");
+          }}
+        >
           No products yet.
         </ListEmpty>
       )}
@@ -102,12 +114,20 @@ export default function AdminProducts() {
               <div className="order-card__main">
                 <strong className="truncate">{p.name}</strong>
                 <span className="muted truncate">
-                  {p.vendor?.name} · {p.category || "Uncategorised"} · {p.discount_active
-                    ? <><span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}</>
-                    : kes(p.price)} · {p.stock} in stock
+                  {p.vendor?.name} · {p.category || "Uncategorised"} ·{" "}
+                  {p.discount_active ? (
+                    <>
+                      <span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}
+                    </>
+                  ) : (
+                    kes(p.price)
+                  )}{" "}
+                  · {p.stock} in stock
                 </span>
               </div>
-              {p.discount_active && <span className="badge badge--accent">-{p.discount_percent}%</span>}
+              {p.discount_active && (
+                <span className="badge badge--accent">-{p.discount_percent}%</span>
+              )}
               {!p.vendor?.is_active && <span className="badge badge--review">vendor disabled</span>}
               {p.is_featured && <span className="badge badge--feature">featured</span>}
               <span className={`badge ${p.is_active ? "badge--paid" : "badge--cancelled"}`}>
@@ -121,8 +141,10 @@ export default function AdminProducts() {
                 >
                   {p.is_featured ? "★ Featured" : "☆ Feature"}
                 </button>
-                <button className="btn btn--ghost btn--sm"
-                  onClick={() => (editId === p.id ? setEditId(null) : openEdit(p))}>
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => (editId === p.id ? setEditId(null) : openEdit(p))}
+                >
                   {editId === p.id ? "Close" : "Edit"}
                 </button>
                 <button className="btn btn--ghost btn--sm" onClick={() => toggle(p)}>
@@ -136,23 +158,44 @@ export default function AdminProducts() {
               <form className="inline-form" onSubmit={save}>
                 <div className="field field--grow">
                   <label>Name</label>
-                  <input className="input" value={form.name} required
-                    onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <input
+                    className="input"
+                    value={form.name}
+                    required
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
                 </div>
                 <div className="field">
                   <label>Price (KES)</label>
-                  <input className="input" type="number" min="0" step="0.01" value={form.price} required
-                    onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.price}
+                    required
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  />
                 </div>
                 <div className="field">
                   <label>Stock</label>
-                  <input className="input" type="number" min="0" step="1" value={form.stock} required
-                    onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={form.stock}
+                    required
+                    onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                  />
                 </div>
                 <div className="field">
                   <label>Category</label>
-                  <input className="input" value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })} />
+                  <input
+                    className="input"
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  />
                 </div>
                 <button className="btn btn--primary btn--sm" type="submit" disabled={busy}>
                   {busy ? "Saving..." : "Save"}
@@ -162,7 +205,9 @@ export default function AdminProducts() {
           </div>
         ))}
       </div>
-      {products?.length >= 500 && <p className="muted list-hint">Showing the latest 500 — search to narrow down.</p>}
+      {products?.length >= 500 && (
+        <p className="muted list-hint">Showing the latest 500 — search to narrow down.</p>
+      )}
     </DashboardShell>
   );
 }

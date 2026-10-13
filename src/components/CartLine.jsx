@@ -18,28 +18,57 @@ export default function CartLine({ item, disabled = false }) {
   return (
     <div className="card cart-item">
       <Link to={`/products/${item.productId}`} className="cart-item__thumb">
-        {item.image_url ? <img src={imageUrl(item.image_url)} alt={item.name} loading="lazy" /> : "◆"}
+        {item.image_url ? (
+          <img src={imageUrl(item.image_url)} alt={item.name} loading="lazy" />
+        ) : (
+          "◆"
+        )}
       </Link>
       <div className="cart-item__info">
-        <Link to={`/products/${item.productId}`} className="cart-item__name">{item.name}</Link>
+        <Link to={`/products/${item.productId}`} className="cart-item__name">
+          {item.name}
+        </Link>
         <span className="muted">
           {item.original_price ? (
-            <><span className="price--old">KES {Number(item.original_price).toLocaleString()}</span> </>
+            <>
+              <span className="price--old">
+                KES {Number(item.original_price).toLocaleString()}
+              </span>{" "}
+            </>
           ) : null}
           KES {Number(item.price).toLocaleString()}
         </span>
       </div>
       <div className="cart-item__stepper">
-        <button type="button" className="icon-btn" disabled={disabled} aria-label="Decrease quantity"
-          onClick={() => updateQuantity(item.productId, item.quantity - 1)}>−</button>
+        <button
+          type="button"
+          className="icon-btn"
+          disabled={disabled}
+          aria-label="Decrease quantity"
+          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+        >
+          −
+        </button>
         <span aria-live="polite">{item.quantity}</span>
-        <button type="button" className="icon-btn" disabled={disabled || atMax} aria-label="Increase quantity"
-          onClick={() => updateQuantity(item.productId, item.quantity + 1)}>+</button>
+        <button
+          type="button"
+          className="icon-btn"
+          disabled={disabled || atMax}
+          aria-label="Increase quantity"
+          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+        >
+          +
+        </button>
       </div>
       <span className="cart-item__total">KES {(item.price * item.quantity).toLocaleString()}</span>
-      <button type="button" className="delete-btn cart-item__delete" title="Remove item"
-        aria-label={`Remove ${item.name}`} disabled={disabled}
-        onClick={remove}>
+      <button
+        type="button"
+        className="delete-btn cart-item__delete"
+        title="Remove item"
+        aria-label={`Remove ${item.name}`}
+        disabled={disabled}
+        onClick={remove}
+      >
         <TrashIcon />
       </button>
     </div>

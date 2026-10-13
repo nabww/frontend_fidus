@@ -36,7 +36,9 @@ export default function ResetPassword() {
         <div className="auth-card">
           <h1>Invalid link</h1>
           <p className="subtitle">This reset link is missing its token.</p>
-          <p className="auth-card__footer"><Link to="/forgot-password">Request a new link</Link></p>
+          <p className="auth-card__footer">
+            <Link to="/forgot-password">Request a new link</Link>
+          </p>
         </div>
       </div>
     );
@@ -47,19 +49,36 @@ export default function ResetPassword() {
       <div className="auth-card">
         <h1>{invite ? "Set up your seller account" : "Choose a new password"}</h1>
         <p className="subtitle">
-          {invite ? "Choose a password to finish setting up — you'll go straight to your dashboard." : "You'll be signed in once it's saved."}
+          {invite
+            ? "Choose a password to finish setting up — you'll go straight to your dashboard."
+            : "You'll be signed in once it's saved."}
         </p>
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="password">New password</label>
-            <input id="password" className="input" type="password" required minLength={8}
-              autoComplete="new-password" placeholder="At least 8 characters"
-              value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <input
+              id="password"
+              className="input"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
           </div>
           <div className="field">
             <label htmlFor="confirm">Confirm password</label>
-            <input id="confirm" className="input" type="password" required autoComplete="new-password"
-              value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />
+            <input
+              id="confirm"
+              className="input"
+              type="password"
+              required
+              autoComplete="new-password"
+              value={form.confirm}
+              onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+            />
           </div>
           <button className="btn btn--primary" type="submit" disabled={busy}>
             {busy ? "Saving..." : "Save password"}

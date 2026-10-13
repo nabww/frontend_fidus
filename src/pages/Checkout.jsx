@@ -60,7 +60,9 @@ export default function Checkout() {
       } else if (result === "failed") {
         clearCart();
         setStatus("failed");
-        setMessage("That payment didn't go through. Your order is saved — retry payment from its page.");
+        setMessage(
+          "That payment didn't go through. Your order is saved — retry payment from its page."
+        );
         setTimeout(() => navigate(`/orders/${order.id}`), 2500);
       } else {
         setStatus("failed");
@@ -82,7 +84,9 @@ export default function Checkout() {
       <div className="page empty-state">
         <h1>Nothing to check out</h1>
         <p className="muted">Your cart is empty.</p>
-        <Link to="/" className="btn btn--primary">Browse products</Link>
+        <Link to="/" className="btn btn--primary">
+          Browse products
+        </Link>
       </div>
     );
   }
@@ -99,19 +103,31 @@ export default function Checkout() {
         <section>
           <h2 className="section-title">Your items</h2>
           <div className="stack">
-            {items.map((item) => <CartLine key={item.productId} item={item} disabled={busy} />)}
+            {items.map((item) => (
+              <CartLine key={item.productId} item={item} disabled={busy} />
+            ))}
           </div>
         </section>
 
         <aside className="checkout-aside">
           <div className="card summary-card">
-            <div className="row"><span className="muted">Subtotal</span><span>KES {subtotal.toLocaleString()}</span></div>
+            <div className="row">
+              <span className="muted">Subtotal</span>
+              <span>KES {subtotal.toLocaleString()}</span>
+            </div>
             <div className="row">
               <span className="muted">Shipping{form.town ? ` · ${form.town}` : ""}</span>
-              <span>{shipping == null ? "Pick a town" : shipping === 0 ? "Free" : `KES ${shipping.toLocaleString()}`}</span>
+              <span>
+                {shipping == null
+                  ? "Pick a town"
+                  : shipping === 0
+                    ? "Free"
+                    : `KES ${shipping.toLocaleString()}`}
+              </span>
             </div>
             <div className="row row--total">
-              <span>Total</span><span>{total == null ? "…" : `KES ${total.toLocaleString()}`}</span>
+              <span>Total</span>
+              <span>{total == null ? "…" : `KES ${total.toLocaleString()}`}</span>
             </div>
           </div>
 
@@ -119,26 +135,45 @@ export default function Checkout() {
             <h2 className="section-title">Delivery & payment</h2>
             <div className="field">
               <label htmlFor="co-email">Email for receipt</label>
-              <input id="co-email" className="input" type="email" required autoComplete="email"
+              <input
+                id="co-email"
+                className="input"
+                type="email"
+                required
+                autoComplete="email"
                 value={form.customer_email}
-                onChange={(e) => setForm({ ...form, customer_email: e.target.value })} />
+                onChange={(e) => setForm({ ...form, customer_email: e.target.value })}
+              />
             </div>
             <div className="field">
               <label htmlFor="co-phone">M-Pesa number</label>
-              <input id="co-phone" className="input" type="tel" inputMode="tel" required autoComplete="tel"
+              <input
+                id="co-phone"
+                className="input"
+                type="tel"
+                inputMode="tel"
+                required
+                autoComplete="tel"
                 placeholder="07XX XXX XXX"
                 value={form.customer_phone}
-                onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} />
+                onChange={(e) => setForm({ ...form, customer_phone: e.target.value })}
+              />
               <p className="field__hint">We'll send the payment prompt to this number.</p>
             </div>
             <div className="field">
               <label htmlFor="co-town">Delivery town</label>
-              <select id="co-town" className="input" required value={form.town}
-                onChange={(e) => setForm({ ...form, town: e.target.value })}>
+              <select
+                id="co-town"
+                className="input"
+                required
+                value={form.town}
+                onChange={(e) => setForm({ ...form, town: e.target.value })}
+              >
                 <option value="">Select a town</option>
                 {zones.map((z) => (
                   <option key={z.town} value={z.town}>
-                    {z.town}{freeShip || z.fee === 0 ? " — free" : ` — KES ${z.fee.toLocaleString()}`}
+                    {z.town}
+                    {freeShip || z.fee === 0 ? " — free" : ` — KES ${z.fee.toLocaleString()}`}
                   </option>
                 ))}
               </select>
@@ -152,10 +187,15 @@ export default function Checkout() {
             </div>
             <div className="field">
               <label htmlFor="co-address">Address details</label>
-              <input id="co-address" className="input" required autoComplete="street-address"
+              <input
+                id="co-address"
+                className="input"
+                required
+                autoComplete="street-address"
                 placeholder="Estate / street / building / landmark"
                 value={form.address_detail}
-                onChange={(e) => setForm({ ...form, address_detail: e.target.value })} />
+                onChange={(e) => setForm({ ...form, address_detail: e.target.value })}
+              />
             </div>
             <button className="btn btn--primary btn--block" type="submit" disabled={busy}>
               {status === "placing"
@@ -164,7 +204,9 @@ export default function Checkout() {
                   ? "Check your phone for the M-Pesa prompt..."
                   : status === "paid"
                     ? "Payment confirmed"
-                    : total == null ? "Pay with M-Pesa" : `Pay KES ${total.toLocaleString()} with M-Pesa`}
+                    : total == null
+                      ? "Pay with M-Pesa"
+                      : `Pay KES ${total.toLocaleString()} with M-Pesa`}
             </button>
             {status === "awaiting-payment" && (
               <div className="pay-wait" role="status" aria-live="polite">
@@ -172,8 +214,9 @@ export default function Checkout() {
                 <div>
                   <strong>Check your phone</strong>
                   <p>
-                    Enter your M-Pesa PIN on the prompt sent to {form.customer_phone || "your phone"}.
-                    This page updates on its own — no need to refresh.
+                    Enter your M-Pesa PIN on the prompt sent to{" "}
+                    {form.customer_phone || "your phone"}. This page updates on its own — no need to
+                    refresh.
                   </p>
                 </div>
               </div>

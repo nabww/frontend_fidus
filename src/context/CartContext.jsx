@@ -25,15 +25,21 @@ export function CartProvider({ children }) {
         );
       }
       const hasDiscount = product.discount_active && product.effective_price < product.price;
-      return [...prev, {
-        productId: product.id,
-        name: product.name,
-        price: hasDiscount ? product.effective_price : product.price,
-        ...(hasDiscount && { original_price: product.price, discount_percent: product.discount_percent }),
-        image_url: product.image_url || null,
-        stock: product.stock ?? null,
-        quantity,
-      }];
+      return [
+        ...prev,
+        {
+          productId: product.id,
+          name: product.name,
+          price: hasDiscount ? product.effective_price : product.price,
+          ...(hasDiscount && {
+            original_price: product.price,
+            discount_percent: product.discount_percent,
+          }),
+          image_url: product.image_url || null,
+          stock: product.stock ?? null,
+          quantity,
+        },
+      ];
     });
   }
 
@@ -59,7 +65,9 @@ export function CartProvider({ children }) {
   const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, subtotal, bump }}>
+    <CartContext.Provider
+      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, subtotal, bump }}
+    >
       {children}
     </CartContext.Provider>
   );

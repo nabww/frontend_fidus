@@ -11,9 +11,11 @@ export default function ItemTiles({ items = [], max = 6 }) {
         const name = i.product?.name || "Item";
         return (
           <div key={i.id} className="item-tile" title={`${i.quantity}× ${name}`}>
-            {i.product?.image_url
-              ? <img src={imageUrl(i.product.image_url)} alt={name} loading="lazy" />
-              : <span aria-hidden="true">◆</span>}
+            {i.product?.image_url ? (
+              <img src={imageUrl(i.product.image_url)} alt={name} loading="lazy" />
+            ) : (
+              <span aria-hidden="true">◆</span>
+            )}
             {i.quantity > 1 && <span className="item-tile__qty">×{i.quantity}</span>}
           </div>
         );

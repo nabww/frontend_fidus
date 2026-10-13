@@ -46,7 +46,9 @@ export default function Login() {
           <div className="field">
             <div className="field__label-row">
               <label htmlFor="password">Password</label>
-              <Link to="/forgot-password" className="field__aside">Forgot password?</Link>
+              <Link to="/forgot-password" className="field__aside">
+                Forgot password?
+              </Link>
             </div>
             <input
               id="password"
@@ -65,7 +67,10 @@ export default function Login() {
         </form>
         <OAuthButtons />
         <p className="auth-card__footer">
-          New here? <Link to="/register" state={{ from }}>Create an account</Link>
+          New here?{" "}
+          <Link to="/register" state={{ from }}>
+            Create an account
+          </Link>
         </p>
       </div>
     </div>

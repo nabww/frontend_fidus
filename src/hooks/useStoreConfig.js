@@ -11,15 +11,21 @@ export default function useStoreConfig() {
 
   useEffect(() => {
     if (cached) return;
-    inflight ||= client.get("/config").then((res) => {
-      const zones = res.data.shippingZones || [];
-      cached = {
-        zones,
-        freeMin: Number(res.data.freeShippingMin) || 0,
-        minFee: zones.length ? Math.min(...zones.map((z) => z.fee)) : null,
-      };
-      return cached;
-    }).catch(() => { inflight = null; return null; });
+    inflight ||= client
+      .get("/config")
+      .then((res) => {
+        const zones = res.data.shippingZones || [];
+        cached = {
+          zones,
+          freeMin: Number(res.data.freeShippingMin) || 0,
+          minFee: zones.length ? Math.min(...zones.map((z) => z.fee)) : null,
+        };
+        return cached;
+      })
+      .catch(() => {
+        inflight = null;
+        return null;
+      });
     inflight.then((c) => c && setConfig(c));
   }, []);
 
