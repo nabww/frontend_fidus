@@ -143,7 +143,11 @@ export default function OrderDetail() {
       )}
 
       {cancelled ? (
-        <p className="notice">This order was cancelled and its stock released.</p>
+        <p className="notice">
+          This order was cancelled and its stock released.
+          {order.refund_status === "due" && " Your refund is being processed."}
+          {order.refund_status === "paid" && ` Your refund was sent${order.refund_reference ? ` (${order.refund_reference})` : ""}.`}
+        </p>
       ) : (
         <div className="steps">
           {steps.map((step, i) => (

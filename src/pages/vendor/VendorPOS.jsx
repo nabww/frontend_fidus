@@ -22,6 +22,7 @@ export default function VendorPOS() {
 
   const [cart, setCart] = useState([]);
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [fulfillment, setFulfillment] = useState("pickup"); // pickup | delivery
   const [town, setTown] = useState("");
   const [addressDetail, setAddressDetail] = useState("");
@@ -109,6 +110,7 @@ export default function VendorPOS() {
         customer_phone: phone,
         fulfillment_type: fulfillment,
       };
+      if (email.trim()) payload.customer_email = email.trim();
       if (isDelivery) {
         payload.town = town;
         payload.shipping_address = `${town} — ${addressDetail.trim()}`;
@@ -338,6 +340,18 @@ export default function VendorPOS() {
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={status !== "idle"}
                   required
+                />
+              </div>
+              <div className="field" style={{ margin: "0 0 0.75rem" }}>
+                <label htmlFor="pos-email">Customer Email <span className="muted">(optional — for receipts)</span></label>
+                <input
+                  id="pos-email"
+                  className="input"
+                  type="email"
+                  placeholder="customer@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={status !== "idle"}
                 />
               </div>
               {errorMsg && (

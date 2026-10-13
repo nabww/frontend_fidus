@@ -9,7 +9,7 @@ import useDebounced from "../../hooks/useDebounced";
 import useList from "../../hooks/useList";
 import { kes, shortDate } from "../../utils/format";
 
-const FILTERS = ["", "pending", "paid", "shipped", "delivered", "cancelled"];
+const FILTERS = ["", "pending", "paid", "shipped", "delivered", "cancelled", "refund due"];
 const ACTION_LABELS = { shipped: "Mark shipped", delivered: "Mark delivered", cancelled: "Cancel" };
 const EMPTY_TRACKING = { courier: "", tracking_number: "" };
 
@@ -19,11 +19,27 @@ export default function AdminOrders() {
   const [query, setQuery] = useState("");
   const q = useDebounced(query).trim();
   const { data: orders, loading, error, reload } = useList("/admin/orders", {
-    status: status || undefined,
+    status: status === "refund due" ? undefined : status || undefined,
+    refund: status === "refund due" ? "due" : undefined,
     q: q || undefined,
   });
   const [shipForm, setShipForm] = useState(null); // order id with the courier form open
   const [tracking, setTracking] = useState(EMPTY_TRACKING);
+  const [refundForm, setRefundForm] = useState(null); // order id with the refund form open
+  const [refundRef, setRefundRef] = useState("");
+
+  async function markRefunded(order) {
+    if (!refundRef.trim()) return toast("Enter the M-Pesa reversal reference", { type: "error" });
+    try {
+      await client.put(`/admin/orders/${order.id}/refund`, { reference: refundRef.trim() });
+      toast(`Order #${order.order_no} refund recorded`);
+      setRefundForm(null);
+      setRefundRef("");
+      reload();
+    } catch (err) {
+      toast(err.response?.data?.message || "Couldn't record the refund", { type: "error" });
+    }
+  }
 
   async function act(order, nextStatus, extra = {}) {
     if (nextStatus === "cancelled") {
@@ -77,6 +93,8 @@ export default function AdminOrders() {
                 </span>
               </div>
               {o.fulfillment_type === "pickup" && <span className="badge badge--info">pickup</span>}
+              {o.refund_status === "due" && <span className="badge badge--failed">refund due</span>}
+              {o.refund_status === "paid" && <span className="badge badge--paid">refunded</span>}
               <span className={`badge badge--${o.status}`}>{o.status}</span>
               <span className="order-card__total">{kes(o.total)}</span>
               {o.allowed?.length > 0 && (
@@ -92,7 +110,28 @@ export default function AdminOrders() {
                   ))}
                 </div>
               )}
+              {o.refund_status === "due" && (
+                <div className="order-card__actions">
+                  <button className="btn btn--sm btn--primary"
+                    onClick={() => setRefundForm(refundForm === o.id ? null : o.id)}>
+                    Mark refunded
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Records the manual M-Pesa reversal reference */}
+            {refundForm === o.id && (
+              <form className="inline-form"
+                onSubmit={(e) => { e.preventDefault(); markRefunded(o); }}>
+                <div className="field">
+                  <label>M-Pesa reversal reference</label>
+                  <input className="input" placeholder="e.g. QJX7A2B3CD" value={refundRef}
+                    onChange={(e) => setRefundRef(e.target.value)} required />
+                </div>
+                <button className="btn btn--primary btn--sm" type="submit">Confirm refunded</button>
+              </form>
+            )}
 
             {/* Admin ships on behalf of a vendor — same courier/tracking capture */}
             {shipForm === o.id && (
