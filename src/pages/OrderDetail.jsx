@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import client, { imageUrl } from "../api/client";
 import { useToast } from "../context/ToastContext";
-
-const STEPS = ["pending", "paid", "shipped", "delivered"];
+import { kes, ORDER_STEPS as STEPS } from "../utils/format";
+import { pollPaymentStatus } from "../utils/payment";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -24,23 +24,16 @@ export default function OrderDetail() {
         toast("Payment confirmed");
         return;
       }
-      // Poll until Daraja confirms (or the callback lands first)
-      const deadline = Date.now() + 90_000;
-      while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 3000));
-        const { data } = await client.get(`/payments/status/${order.id}`);
-        if (data.status !== "pending") {
-          setOrder((o) => ({ ...o, status: data.status }));
-          if (data.status === "paid") toast("Payment confirmed");
-          else toast("Payment was cancelled or timed out", { type: "error" });
-          return;
-        }
-        if (data.payment === "failed") {
-          setError(`${data.reason || "That payment attempt didn't go through"}. You can try again.`);
-          return;
-        }
+      const result = await pollPaymentStatus(order.id);
+      if (result.status !== "pending") {
+        setOrder((o) => ({ ...o, status: result.status }));
+        if (result.status === "paid") toast("Payment confirmed");
+        else toast("Payment was cancelled or timed out", { type: "error" });
+      } else if (result.payment === "failed") {
+        setError(`${result.reason || "That payment attempt didn't go through"}. You can try again.`);
+      } else {
+        setError("Still awaiting confirmation — check back shortly.");
       }
-      setError("Still awaiting confirmation — check back shortly.");
     } catch (err) {
       if (err.response?.status === 409) {
         // A prompt is already live on the customer's phone — don't re-push, just wait
@@ -118,13 +111,16 @@ export default function OrderDetail() {
   if (error && !order) return <div className="page"><p className="error-text">{error}</p></div>;
   if (!order) return <div className="page"><p className="muted">Loading...</p></div>;
 
-  const stepIndex = STEPS.indexOf(order.status);
+  const isPickup = order.fulfillment_type === "pickup";
+  const steps = isPickup ? ["pending", "delivered"] : STEPS;
+  const stepIndex = steps.indexOf(order.status);
   const cancelled = order.status === "cancelled";
 
   return (
     <div className="page">
       <div className="section-header" style={{ marginTop: 0 }}>
         <h1 style={{ margin: 0 }}>Order #{order.order_no}</h1>
+        {isPickup && <span className="badge badge--info">pickup</span>}
         <span className={`badge badge--${order.status}`}>{order.status}</span>
       </div>
       <p className="muted">
@@ -133,7 +129,7 @@ export default function OrderDetail() {
         {order.delivered_at && ` · delivered ${new Date(order.delivered_at).toLocaleString()}`}
       </p>
 
-      {(order.courier || order.tracking_number) && (
+      {!isPickup && (order.courier || order.tracking_number) && (
         <div className="card" style={{ padding: "0.4rem 1.1rem", marginTop: "1rem" }}>
           <div className="row">
             <span className="muted">Courier</span>
@@ -150,7 +146,7 @@ export default function OrderDetail() {
         <p className="notice">This order was cancelled and its stock released.</p>
       ) : (
         <div className="steps">
-          {STEPS.map((step, i) => (
+          {steps.map((step, i) => (
             <div key={step} className={`step ${i <= stepIndex ? "step--done" : ""}`}>
               <span className="step__dot" />
               <span className="step__label">{step}</span>
@@ -182,15 +178,23 @@ export default function OrderDetail() {
 
       <div className="card" style={{ padding: "1.1rem", marginTop: "1.25rem" }}>
         <div className="row"><span className="muted">Subtotal</span><span>KES {Number(order.subtotal).toLocaleString()}</span></div>
-        <div className="row"><span className="muted">Shipping</span><span>KES {Number(order.shipping_cost).toLocaleString()}</span></div>
+        {!isPickup && (
+          <div className="row"><span className="muted">Shipping</span><span>KES {Number(order.shipping_cost).toLocaleString()}</span></div>
+        )}
         <div className="row" style={{ borderBottom: "none", fontWeight: 600 }}>
           <span>Total</span><span>KES {Number(order.total).toLocaleString()}</span>
         </div>
       </div>
 
-      <p className="muted" style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
-        Ships to: {order.shipping_address}
-      </p>
+      {isPickup ? (
+        <p className="muted" style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
+          Pickup — collected at the vendor
+        </p>
+      ) : order.shipping_address && (
+        <p className="muted" style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
+          Ships to: {order.shipping_address}
+        </p>
+      )}
 
       {order.status === "shipped" && (
         <div className="card" style={{ padding: "1rem 1.1rem", marginTop: "1rem" }}>

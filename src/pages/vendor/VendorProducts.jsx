@@ -40,11 +40,15 @@ export default function VendorProducts() {
             <div className="order-card__main">
               <strong className="truncate">{p.name}</strong>
               <span className="muted">
-                {p.category || "Uncategorised"} · {kes(p.price)} · {p.stock} in stock
+                {p.category || "Uncategorised"} · {p.discount_active
+                  ? <><span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}</>
+                  : kes(p.price)} · {p.stock} in stock
               </span>
             </div>
+            {p.discount_active && <span className="badge badge--accent">-{p.discount_percent}%</span>}
+            {p.one_of_a_kind && <span className="badge badge--info">unique</span>}
             {!p.is_active && <span className="badge badge--cancelled">hidden</span>}
-            {p.stock === 0 && p.is_active && <span className="badge">out of stock</span>}
+            {p.stock === 0 && p.is_active && !p.one_of_a_kind && <span className="badge">out of stock</span>}
           </Link>
         ))}
       </div>

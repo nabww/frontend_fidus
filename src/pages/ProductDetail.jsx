@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 import ImageGallery from "../components/ImageGallery";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import useStoreConfig from "../hooks/useStoreConfig";
+import { kes } from "../utils/format";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const config = useStoreConfig();
   const [product, setProduct] = useState(null);
+  // Opened from a shared link? "Back" would leave the site — go to the shop instead
+  const goBack = () => (location.key === "default" ? navigate("/") : navigate(-1));
   const [error, setError] = useState("");
   const [qty, setQty] = useState(1);
   const { addToCart, updateQuantity, items } = useCart();
@@ -47,6 +55,7 @@ export default function ProductDetail() {
   const inCart = items.find((i) => i.productId === product.id);
   const soldOut = product.stock === 0;
   const lowStock = product.stock > 0 && product.stock <= 5;
+  const isOwnProduct = user?.role === "vendor" && product.vendor_id === user.id;
 
   const stepper = inCart ? (
     <div className="cart-item__stepper">
@@ -76,7 +85,7 @@ export default function ProductDetail() {
 
   return (
     <div className="page page--wide">
-      <button className="link-btn back-link" onClick={() => navigate(-1)}>← Back</button>
+      <button className="link-btn back-link" onClick={goBack}>← Back</button>
 
       <div className="pd-grid">
         <ImageGallery
@@ -89,17 +98,50 @@ export default function ProductDetail() {
         <div className="pd-info">
           {product.category && <p className="product-card__cat" style={{ marginTop: 0 }}>{product.category}</p>}
           <h1 className="pd-title">{product.name}</h1>
-          <p className="pd-price">KES {Number(product.price).toLocaleString()}</p>
+          {product.discount_active ? (
+            <p className="pd-price">
+              <span className="price--old">{kes(product.price)}</span>{" "}
+              {kes(product.effective_price)}
+              <span className="discount-badge" style={{ marginLeft: "0.5rem" }}>-{product.discount_percent}%</span>
+            </p>
+          ) : (
+            <p className="pd-price">{kes(product.price)}</p>
+          )}
           <p className={soldOut || lowStock ? "stock-hint" : "muted"} style={{ fontSize: "0.88rem", margin: 0 }}>
             {soldOut ? "Out of stock" : lowStock ? `Only ${product.stock} left` : "In stock"}
           </p>
 
-          {!soldOut && (
+          {isOwnProduct && !soldOut && (
+            <div className="pd-vendor-actions">
+              <Link to={`/vendor/pos?product=${product.id}`} className="btn btn--primary">
+                Direct sale
+              </Link>
+              <Link to={`/vendor/products/${product.id}/edit`} className="btn btn--ghost">
+                Edit listing
+              </Link>
+            </div>
+          )}
+
+          {!soldOut && !isOwnProduct && (
             <div className="pd-actions">
               {stepper}
               {action}
             </div>
           )}
+
+          <ul className="pd-perks">
+            <li>
+              <strong>Delivery</strong>
+              <span>
+                {config?.minFee != null
+                  ? config.minFee === 0 ? "Free to selected towns" : `From ${kes(config.minFee)}, priced by town`
+                  : "Countrywide, priced by town"}
+                {config?.freeMin > 0 && ` · free over ${kes(config.freeMin)}`}
+              </span>
+            </li>
+            <li><strong>Pay with M-Pesa</strong><span>Approve on your phone, no card needed</span></li>
+            <li><strong>Track your order</strong><span>Courier details as soon as it ships</span></li>
+          </ul>
 
           {product.description && (
             <div className="pd-desc">
@@ -111,14 +153,33 @@ export default function ProductDetail() {
       </div>
 
       {/* Mobile: keep the purchase action reachable without scrolling */}
-      {!soldOut && (
+      {!soldOut && !isOwnProduct && (
         <div className="pd-sticky">
           <div>
-            <div style={{ fontWeight: 600 }}>KES {Number(product.price).toLocaleString()}</div>
+            <div style={{ fontWeight: 600 }}>
+              {product.discount_active
+                ? <><span className="price--old">{kes(product.price)}</span> {kes(product.effective_price)}</>
+                : kes(product.price)}
+            </div>
             <div className="muted" style={{ fontSize: "0.78rem" }}>{product.name}</div>
           </div>
           {stepper}
           {action}
+        </div>
+      )}
+      {!soldOut && isOwnProduct && (
+        <div className="pd-sticky">
+          <div>
+            <div style={{ fontWeight: 600 }}>
+              {product.discount_active
+                ? <><span className="price--old">{kes(product.price)}</span> {kes(product.effective_price)}</>
+                : kes(product.price)}
+            </div>
+            <div className="muted" style={{ fontSize: "0.78rem" }}>{product.name}</div>
+          </div>
+          <Link to={`/vendor/pos?product=${product.id}`} className="btn btn--primary">
+            Sell
+          </Link>
         </div>
       )}
     </div>

@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import client from "../api/client";
+import PayoutDetailModal from "./PayoutDetailModal";
 import { useToast } from "../context/ToastContext";
-
-const kes = (n) => `KES ${Number(n || 0).toLocaleString()}`;
-
-const STATUS_LABELS = { processing: "Processing", paid: "Paid", failed: "Failed", review: "Under review" };
+import { kes, PAYOUT_STATUS_LABELS } from "../utils/format";
 
 // Mask all but the last 3 digits of the payout number
 const masked = (phone) => (phone ? `${"•".repeat(Math.max(0, phone.length - 3))}${phone.slice(-3)}` : "");
@@ -16,6 +14,7 @@ export default function VendorPayouts() {
   const [form, setForm] = useState({ phone: "", confirm: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [selectedPayoutId, setSelectedPayoutId] = useState(null);
 
   const load = () => client.get("/payouts/mine").then((res) => {
     setSummary(res.data);
@@ -115,7 +114,12 @@ export default function VendorPayouts() {
       ) : (
         <div className="stack">
           {summary.payouts.map((p) => (
-            <div key={p.id} className="card order-card">
+            <div
+              key={p.id}
+              className="card order-card clickable"
+              style={{ cursor: "pointer" }}
+              onClick={() => setSelectedPayoutId(p.id)}
+            >
               <div className="order-card__main">
                 <strong>{kes(p.net_amount)}</strong>
                 <span className="muted">
@@ -124,10 +128,17 @@ export default function VendorPayouts() {
                   {p.mpesa_transaction_id && ` · Ref ${p.mpesa_transaction_id}`}
                 </span>
               </div>
-              <span className={`badge badge--${p.status}`}>{STATUS_LABELS[p.status] || p.status}</span>
+              <span className={`badge badge--${p.status}`}>{PAYOUT_STATUS_LABELS[p.status] || p.status}</span>
             </div>
           ))}
         </div>
+      )}
+
+      {selectedPayoutId && (
+        <PayoutDetailModal
+          payoutId={selectedPayoutId}
+          onClose={() => setSelectedPayoutId(null)}
+        />
       )}
     </section>
   );

@@ -9,7 +9,8 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [form, setForm] = useState({
-    name: "", description: "", category: "", price: "", stock: "",
+    name: "", description: "", category: "", price: "", stock: "", one_of_a_kind: false,
+    discount_percent: "", discount_start: "", discount_end: "",
   });
   const [images, setImages] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -24,8 +25,14 @@ export default function ProductForm() {
   useEffect(() => {
     if (id) {
       client.get(`/products/vendor/${id}`).then(({ data }) => {
-        const { name, description, category, price, stock } = data;
-        setForm({ name, description, category, price, stock });
+        const { name, description, category, price, stock, one_of_a_kind,
+          discount_percent, discount_start, discount_end } = data;
+        setForm({
+          name, description, category, price, stock, one_of_a_kind: !!one_of_a_kind,
+          discount_percent: discount_percent ?? "",
+          discount_start: discount_start ? discount_start.slice(0, 16) : "",
+          discount_end: discount_end ? discount_end.slice(0, 16) : "",
+        });
         const urls = data.images?.length ? data.images.map((i) => i.url) : data.image_url ? [data.image_url] : [];
         setImages(existingEntries(urls));
       });
@@ -46,8 +53,16 @@ export default function ProductForm() {
     try {
       // One multipart request: fields + new files + the final order of all images
       const payload = new FormData();
+      const discountKeys = new Set(["discount_percent", "discount_start", "discount_end"]);
       Object.entries({ ...form, price: Number(form.price), stock: Number(form.stock) })
-        .forEach(([k, v]) => v != null && v !== "" && payload.append(k, v));
+        .forEach(([k, v]) => {
+          // Discount fields must be sent even when empty (so the backend can clear them)
+          if (discountKeys.has(k)) {
+            payload.append(k, v ?? "");
+          } else if (v != null && v !== "") {
+            payload.append(k, v);
+          }
+        });
 
       let fileIndex = 0;
       const order = images.map((entry) => {
@@ -121,6 +136,51 @@ export default function ProductForm() {
           <label htmlFor="stock">Stock quantity</label>
           <input id="stock" className="input" type="number" min="0" required value={form.stock}
             onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+        </div>
+        <fieldset className="discount-fieldset">
+          <legend>Discount</legend>
+          <div className="field">
+            <label htmlFor="discount_percent">Discount (%)</label>
+            <input id="discount_percent" className="input" type="number" min="0" max="99" step="1"
+              placeholder="e.g. 10" value={form.discount_percent}
+              onChange={(e) => setForm({ ...form, discount_percent: e.target.value })} />
+          </div>
+          {form.discount_percent > 0 && (
+            <div className="discount-dates">
+              <div className="field">
+                <label htmlFor="discount_start">Starts (optional)</label>
+                <input id="discount_start" className="input" type="datetime-local"
+                  value={form.discount_start}
+                  onChange={(e) => setForm({ ...form, discount_start: e.target.value })} />
+              </div>
+              <div className="field">
+                <label htmlFor="discount_end">Ends (optional)</label>
+                <input id="discount_end" className="input" type="datetime-local"
+                  value={form.discount_end}
+                  onChange={(e) => setForm({ ...form, discount_end: e.target.value })} />
+              </div>
+            </div>
+          )}
+          {form.discount_percent > 0 && form.price > 0 && (
+            <p className="muted" style={{ fontSize: "0.85rem", margin: "0.35rem 0 0" }}>
+              Sale price: <strong>KES {Math.round(Number(form.price) * (1 - form.discount_percent / 100)).toLocaleString()}</strong>
+              {" "}(was KES {Number(form.price).toLocaleString()})
+            </p>
+          )}
+        </fieldset>
+
+        <div className="field">
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={form.one_of_a_kind}
+              onChange={(e) => setForm({ ...form, one_of_a_kind: e.target.checked })}
+            />
+            <span>One-of-a-kind item</span>
+          </label>
+          <p className="muted" style={{ fontSize: "0.8rem", margin: "0.25rem 0 0" }}>
+            Unique or used items disappear from the shop when sold out instead of showing "out of stock."
+          </p>
         </div>
         <div className="field">
           <label>Images</label>

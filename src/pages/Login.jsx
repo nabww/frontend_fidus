@@ -64,7 +64,7 @@ export default function Login() {
           {error && <p className="error-text">{error}</p>}
         </form>
         <OAuthButtons />
-        <p className="footer">
+        <p className="auth-card__footer">
           New here? <Link to="/register" state={{ from }}>Create an account</Link>
         </p>
       </div>

@@ -48,6 +48,16 @@ export default function AdminProducts() {
     }
   }
 
+  async function feature(p) {
+    try {
+      await client.put(`/admin/products/${p.id}`, { is_featured: !p.is_featured });
+      toast(p.is_featured ? "Removed from featured" : "Featured — it'll lead the shop");
+      reload();
+    } catch (err) {
+      toast(err.response?.data?.message || "Couldn't update the product", { type: "error" });
+    }
+  }
+
   async function toggle(p) {
     if (p.is_active) {
       const ok = await confirm({
@@ -92,14 +102,25 @@ export default function AdminProducts() {
               <div className="order-card__main">
                 <strong className="truncate">{p.name}</strong>
                 <span className="muted truncate">
-                  {p.vendor?.name} · {p.category || "Uncategorised"} · {kes(p.price)} · {p.stock} in stock
+                  {p.vendor?.name} · {p.category || "Uncategorised"} · {p.discount_active
+                    ? <><span className="price--old">{kes(p.price)}</span> {kes(p.effective_price)}</>
+                    : kes(p.price)} · {p.stock} in stock
                 </span>
               </div>
+              {p.discount_active && <span className="badge badge--accent">-{p.discount_percent}%</span>}
               {!p.vendor?.is_active && <span className="badge badge--review">vendor disabled</span>}
+              {p.is_featured && <span className="badge badge--feature">featured</span>}
               <span className={`badge ${p.is_active ? "badge--paid" : "badge--cancelled"}`}>
                 {p.is_active ? "live" : "hidden"}
               </span>
               <div className="order-card__actions">
+                <button
+                  className={`btn btn--sm ${p.is_featured ? "btn--primary" : "btn--ghost"}`}
+                  title={p.is_featured ? "Remove from featured" : "Feature in the shop"}
+                  onClick={() => feature(p)}
+                >
+                  {p.is_featured ? "★ Featured" : "☆ Feature"}
+                </button>
                 <button className="btn btn--ghost btn--sm"
                   onClick={() => (editId === p.id ? setEditId(null) : openEdit(p))}>
                   {editId === p.id ? "Close" : "Edit"}

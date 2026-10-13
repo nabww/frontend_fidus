@@ -44,7 +44,7 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        <p className="footer">
+        <p className="auth-card__footer">
           Remembered it? <Link to="/login">Back to sign in</Link>
         </p>
       </div>

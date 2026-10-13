@@ -68,7 +68,7 @@ export default function AdminOrders() {
               <div className="order-card__main">
                 <strong>#{o.order_no} · {o.customer?.name || "Customer"}</strong>
                 <span className="muted truncate">
-                  {shortDate(o.created_at || o.createdAt)} · {o.customer?.email} · {o.shipping_address}
+                  {shortDate(o.created_at || o.createdAt)} · {o.customer?.email} · {o.fulfillment_type === "pickup" ? "Pickup" : o.shipping_address}
                 </span>
                 <span className="muted truncate">
                   {o.items?.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
@@ -76,6 +76,7 @@ export default function AdminOrders() {
                   {o.courier && ` · ${o.courier}${o.tracking_number ? ` ${o.tracking_number}` : ""}`}
                 </span>
               </div>
+              {o.fulfillment_type === "pickup" && <span className="badge badge--info">pickup</span>}
               <span className={`badge badge--${o.status}`}>{o.status}</span>
               <span className="order-card__total">{kes(o.total)}</span>
               {o.allowed?.length > 0 && (

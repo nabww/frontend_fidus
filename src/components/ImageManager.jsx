@@ -4,7 +4,7 @@ import { useToast } from "../context/ToastContext";
 import { CameraIcon, TrashIcon } from "./Icons";
 import shrinkImage from "../utils/shrinkImage";
 
-export const MAX_IMAGES = 8;
+const MAX_IMAGES = 8;
 const MAX_BYTES = 5 * 1024 * 1024;
 let keySeq = 0;
 

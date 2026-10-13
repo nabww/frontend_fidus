@@ -22,7 +22,9 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef(null);
   const count = items.reduce((sum, i) => sum + i.quantity, 0);
-  const roleLink = user && ROLE_LINK[user.role];
+  const roleLink = user?.role === "vendor" && user.vendor_status !== "approved"
+    ? { to: "/vendor/status", label: "Application" }
+    : user && ROLE_LINK[user.role];
   const initial = (user?.name || user?.email || "?").trim().charAt(0).toUpperCase();
 
   // Solid background + faint shadow once the page scrolls under the bar
@@ -106,6 +108,15 @@ export default function Navbar() {
                   {roleLink && (
                     <Link to={roleLink.to} className="account__item" role="menuitem">{roleLink.label}</Link>
                   )}
+                  {user.role === "customer" && (
+                    <Link to={user.vendor_status ? "/vendor/status" : "/sell"} className="account__item" role="menuitem">
+                      {user.vendor_status ? "Seller application" : "Sell on Fidus"}
+                    </Link>
+                  )}
+                  {user.role === "vendor" && user.vendor_status === "approved" && (
+                    <Link to="/orders" className="account__item" role="menuitem">My purchases</Link>
+                  )}
+                  <Link to="/help" className="account__item" role="menuitem">Help &amp; contact</Link>
                   <button className="account__item" role="menuitem" onClick={toggleTheme}>
                     <ThemeIcon /> {themeLabel}
                   </button>

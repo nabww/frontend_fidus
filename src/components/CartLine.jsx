@@ -22,7 +22,12 @@ export default function CartLine({ item, disabled = false }) {
       </Link>
       <div className="cart-item__info">
         <Link to={`/products/${item.productId}`} className="cart-item__name">{item.name}</Link>
-        <span className="muted">KES {Number(item.price).toLocaleString()}</span>
+        <span className="muted">
+          {item.original_price ? (
+            <><span className="price--old">KES {Number(item.original_price).toLocaleString()}</span> </>
+          ) : null}
+          KES {Number(item.price).toLocaleString()}
+        </span>
       </div>
       <div className="cart-item__stepper">
         <button type="button" className="icon-btn" disabled={disabled} aria-label="Decrease quantity"

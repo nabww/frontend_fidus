@@ -7,6 +7,7 @@ import { homeFor } from "../utils/homeFor";
 export default function ResetPassword() {
   const [params] = useSearchParams();
   const token = params.get("token");
+  const invite = params.get("invite") === "1"; // admin-created seller account
   const { resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -21,7 +22,7 @@ export default function ResetPassword() {
     setBusy(true);
     try {
       const user = await resetPassword(token, form.password);
-      toast("Password updated — you're signed in");
+      toast(invite ? "Welcome to Fidus — you're signed in" : "Password updated — you're signed in");
       navigate(homeFor(user), { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Couldn't reset your password.");
@@ -35,7 +36,7 @@ export default function ResetPassword() {
         <div className="auth-card">
           <h1>Invalid link</h1>
           <p className="subtitle">This reset link is missing its token.</p>
-          <p className="footer"><Link to="/forgot-password">Request a new link</Link></p>
+          <p className="auth-card__footer"><Link to="/forgot-password">Request a new link</Link></p>
         </div>
       </div>
     );
@@ -44,8 +45,10 @@ export default function ResetPassword() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>Choose a new password</h1>
-        <p className="subtitle">You'll be signed in once it's saved.</p>
+        <h1>{invite ? "Set up your seller account" : "Choose a new password"}</h1>
+        <p className="subtitle">
+          {invite ? "Choose a password to finish setting up — you'll go straight to your dashboard." : "You'll be signed in once it's saved."}
+        </p>
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="password">New password</label>

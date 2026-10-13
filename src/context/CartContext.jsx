@@ -24,10 +24,12 @@ export function CartProvider({ children }) {
           i.productId === product.id ? { ...i, quantity: i.quantity + quantity } : i
         );
       }
+      const hasDiscount = product.discount_active && product.effective_price < product.price;
       return [...prev, {
         productId: product.id,
         name: product.name,
-        price: product.price,
+        price: hasDiscount ? product.effective_price : product.price,
+        ...(hasDiscount && { original_price: product.price, discount_percent: product.discount_percent }),
         image_url: product.image_url || null,
         stock: product.stock ?? null,
         quantity,

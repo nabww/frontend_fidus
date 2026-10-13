@@ -1,6 +1,6 @@
 import DashboardTabs from "./DashboardTabs";
 
-export const ADMIN_TABS = [
+const ADMIN_TABS = [
   { to: "", label: "Overview" },
   { to: "/vendors", label: "Vendors" },
   { to: "/customers", label: "Customers" },
@@ -8,10 +8,13 @@ export const ADMIN_TABS = [
   { to: "/products", label: "Products" },
   { to: "/delivery", label: "Delivery" },
   { to: "/payouts", label: "Payouts" },
+  { to: "/audit", label: "Audit" },
+  { to: "/settings", label: "Settings" },
 ];
 
-export const VENDOR_TABS = [
+const VENDOR_TABS = [
   { to: "", label: "Overview" },
+  { to: "/pos", label: "Direct Sale" },
   { to: "/orders", label: "Orders" },
   { to: "/products", label: "Products" },
 ];

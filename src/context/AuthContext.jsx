@@ -60,6 +60,27 @@ export function AuthProvider({ children }) {
     return applySession(data);
   }
 
+  async function applyVendor(payload) {
+    const { data } = await client.post("/auth/vendor-apply", payload);
+    return applySession(data);
+  }
+
+  // Signed-in customer applies to sell — same session, account flagged as applicant
+  async function upgradeToVendor(payload) {
+    const { data } = await client.post("/auth/vendor-upgrade", payload);
+    localStorage.setItem("fidus_user", JSON.stringify(data));
+    setUser(data);
+    return data;
+  }
+
+  // Re-read the account (e.g. a pending vendor checking whether they've been approved)
+  async function refreshUser() {
+    const { data } = await client.get("/auth/me");
+    localStorage.setItem("fidus_user", JSON.stringify(data));
+    setUser(data);
+    return data;
+  }
+
   async function oauthLogin(provider, payload) {
     const { data } = await client.post(`/auth/oauth/${provider}`, payload);
     return applySession(data);
@@ -78,7 +99,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, oauthLogin, resetPassword, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, applyVendor, upgradeToVendor, refreshUser, oauthLogin, resetPassword, logout }}>
       {children}
     </AuthContext.Provider>
   );

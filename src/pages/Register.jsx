@@ -8,7 +8,7 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const from = useLocation().state?.from;
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", role: "customer" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -40,7 +40,7 @@ export default function Register() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>Create your account</h1>
-        <p className="subtitle">Join Fidus — shop or sell electronics</p>
+        <p className="subtitle">Shop electronics with M-Pesa checkout and tracked delivery</p>
         <form onSubmit={handleSubmit}>
           {field("name", "Full name", {
             value: form.name,
@@ -73,19 +73,17 @@ export default function Register() {
             autoComplete: "new-password",
             onChange: (e) => setForm({ ...form, confirmPassword: e.target.value }),
           })}
-          <label className="check">
-            <input type="checkbox" checked={form.role === "vendor"}
-              onChange={(e) => setForm({ ...form, role: e.target.checked ? "vendor" : "customer" })} />
-            Register as a vendor
-          </label>
           <button className="btn btn--primary" type="submit" disabled={busy}>
             {busy ? "Creating account..." : "Create account"}
           </button>
           {error && <p className="error-text">{error}</p>}
         </form>
         <OAuthButtons />
-        <p className="footer">
+        <p className="auth-card__footer">
           Already have an account? <Link to="/login" state={{ from }}>Sign in</Link>
+        </p>
+        <p className="auth-card__footer" style={{ marginTop: "0.6rem" }}>
+          Want to sell on Fidus? <Link to="/sell">Apply as a seller</Link>
         </p>
       </div>
     </div>

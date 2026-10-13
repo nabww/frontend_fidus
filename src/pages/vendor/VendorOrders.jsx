@@ -7,14 +7,10 @@ import { ListEmpty, ListSkeleton } from "../../components/ListState";
 import SearchBox from "../../components/SearchBox";
 import { useToast } from "../../context/ToastContext";
 import useList from "../../hooks/useList";
-import { kes, matches, shortDate } from "../../utils/format";
+import { kes, matches, shortDate, vendorTotal } from "../../utils/format";
 
 const FILTERS = ["", "paid", "shipped", "delivered", "pending", "cancelled"];
 const ACTION_LABELS = { shipped: "Mark shipped", delivered: "Mark delivered", cancelled: "Cancel order" };
-
-// The vendor's share of an order (they only ever see their own items)
-const vendorTotal = (order) =>
-  order.items.reduce((s, i) => s + Number(i.unit_price) * i.quantity, 0);
 
 export default function VendorOrders() {
   const navigate = useNavigate();
@@ -76,6 +72,7 @@ export default function VendorOrders() {
                 {o.items.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
               </span>
             </div>
+            {o.fulfillment_type === "pickup" && <span className="badge badge--info">pickup</span>}
             <span className={`badge badge--${o.status}`}>{o.status}</span>
             <span className="order-card__total">{kes(vendorTotal(o))}</span>
             {o.allowed?.length > 0 && (

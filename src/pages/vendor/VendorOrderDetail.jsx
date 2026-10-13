@@ -4,9 +4,7 @@ import client, { imageUrl } from "../../api/client";
 import DashboardShell from "../../components/DashboardShell";
 import { ListSkeleton } from "../../components/ListState";
 import { useToast } from "../../context/ToastContext";
-import { kes } from "../../utils/format";
-
-const STEPS = ["pending", "paid", "shipped", "delivered"];
+import { kes, ORDER_STEPS as STEPS, vendorTotal } from "../../utils/format";
 
 export default function VendorOrderDetail() {
   const { id } = useParams();
@@ -76,8 +74,10 @@ export default function VendorOrderDetail() {
   if (error) return <DashboardShell area="vendor" back={back}><p className="error-text">{error}</p></DashboardShell>;
   if (!order) return <DashboardShell area="vendor" back={back}><ListSkeleton rows={3} /></DashboardShell>;
 
-  const myTotal = order.items.reduce((s, i) => s + Number(i.unit_price) * i.quantity, 0);
-  const stepIndex = STEPS.indexOf(order.status);
+  const myTotal = vendorTotal(order);
+  const isPickup = order.fulfillment_type === "pickup";
+  const steps = isPickup ? ["pending", "delivered"] : STEPS;
+  const stepIndex = steps.indexOf(order.status);
   const canShip = order.allowed?.includes("shipped");
   const canCancel = order.allowed?.includes("cancelled");
   const canDeliver = order.allowed?.includes("delivered");
@@ -87,6 +87,7 @@ export default function VendorOrderDetail() {
     <DashboardShell area="vendor" back={back}>
       <div className="section-header" style={{ marginTop: 0 }}>
         <h2 style={{ margin: 0 }}>Order #{order.order_no}</h2>
+        {isPickup && <span className="badge badge--info">pickup</span>}
         <span className={`badge badge--${order.status}`}>{order.status}</span>
       </div>
       <p className="muted" style={{ fontSize: "0.88rem" }}>
@@ -96,7 +97,7 @@ export default function VendorOrderDetail() {
 
       {order.status !== "cancelled" && (
         <div className="steps">
-          {STEPS.map((s, i) => (
+          {steps.map((s, i) => (
             <div key={s} className={`step${i <= stepIndex ? " step--done" : ""}`}>
               <span className="step__dot" /><span className="step__label">{s}</span>
             </div>
@@ -105,13 +106,19 @@ export default function VendorOrderDetail() {
       )}
 
       <div className="card" style={{ padding: "0.4rem 1.1rem", marginTop: "1rem" }}>
-        <div className="row"><span className="muted">Deliver to</span><span>{order.shipping_address}</span></div>
+        <div className="row">
+          <span className="muted">Fulfillment</span>
+          <span>{isPickup ? "Pickup (direct sale)" : "Delivery"}</span>
+        </div>
+        {!isPickup && order.shipping_address && (
+          <div className="row"><span className="muted">Deliver to</span><span>{order.shipping_address}</span></div>
+        )}
         <div className="row"><span className="muted">Customer</span>
           <span>{order.customer?.name} · {order.customer_phone}</span></div>
         <div className="row"><span className="muted">Receipts go to</span><span>{order.customer_email}</span></div>
       </div>
 
-      {(hasTracking || editingTracking) && !editingTracking && hasTracking && (
+      {!isPickup && hasTracking && !editingTracking && (
         <div className="card" style={{ padding: "0.4rem 1.1rem", marginTop: "0.75rem" }}>
           <div className="row">
             <span className="muted">Courier</span>
@@ -128,7 +135,7 @@ export default function VendorOrderDetail() {
           </div>
         </div>
       )}
-      {editingTracking && (
+      {!isPickup && editingTracking && (
         <form className="card" style={{ padding: "1.1rem", marginTop: "0.75rem" }} onSubmit={saveTracking}>
           <div className="field">
             <label htmlFor="courier-edit">Courier</label>

@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useStoreConfig from "../hooks/useStoreConfig";
 import { Link, useNavigate } from "react-router-dom";
 import client from "../api/client";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import CartLine from "../components/CartLine";
 import { useToast } from "../context/ToastContext";
-
-const POLL_INTERVAL_MS = 3000;
-const POLL_TIMEOUT_MS = 90_000;
+import { pollPaymentStatus } from "../utils/payment";
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
@@ -22,25 +21,14 @@ export default function Checkout() {
   });
   const [status, setStatus] = useState("idle"); // idle | placing | awaiting-payment | error | paid | failed
   const [message, setMessage] = useState("");
-  const [zones, setZones] = useState([]);
-  const [freeMin, setFreeMin] = useState(0);
-
-  useEffect(() => {
-    client.get("/config").then((res) => {
-      setZones(res.data.shippingZones || []);
-      setFreeMin(Number(res.data.freeShippingMin) || 0);
-    });
-  }, []);
+  const config = useStoreConfig();
+  const zones = config?.zones || [];
+  const freeMin = config?.freeMin || 0;
 
   async function pollPayment(orderId) {
-    const deadline = Date.now() + POLL_TIMEOUT_MS;
-    while (Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-      const { data } = await client.get(`/payments/status/${orderId}`);
-      if (data.status !== "pending") return data.status;
-      if (data.payment === "failed") return "failed";
-    }
-    return "pending";
+    const result = await pollPaymentStatus(orderId);
+    if (result.payment === "failed") return "failed";
+    return result.status;
   }
 
   async function handleSubmit(e) {
@@ -141,6 +129,7 @@ export default function Checkout() {
                 placeholder="07XX XXX XXX"
                 value={form.customer_phone}
                 onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} />
+              <p className="field__hint">We'll send the payment prompt to this number.</p>
             </div>
             <div className="field">
               <label htmlFor="co-town">Delivery town</label>
@@ -154,7 +143,7 @@ export default function Checkout() {
                 ))}
               </select>
               {freeMin > 0 && (
-                <p className="muted" style={{ margin: "0.35rem 0 0", fontSize: "0.82rem" }}>
+                <p className="field__hint">
                   {freeShip
                     ? "Your order qualifies for free delivery."
                     : `Free delivery on orders over KES ${freeMin.toLocaleString()} — you're KES ${(freeMin - subtotal).toLocaleString()} away.`}
@@ -177,8 +166,25 @@ export default function Checkout() {
                     ? "Payment confirmed"
                     : total == null ? "Pay with M-Pesa" : `Pay KES ${total.toLocaleString()} with M-Pesa`}
             </button>
+            {status === "awaiting-payment" && (
+              <div className="pay-wait" role="status" aria-live="polite">
+                <span className="spinner" aria-hidden="true" />
+                <div>
+                  <strong>Check your phone</strong>
+                  <p>
+                    Enter your M-Pesa PIN on the prompt sent to {form.customer_phone || "your phone"}.
+                    This page updates on its own — no need to refresh.
+                  </p>
+                </div>
+              </div>
+            )}
             {status === "paid" && <p className="notice">{message}</p>}
             {(status === "error" || status === "failed") && <p className="error-text">{message}</p>}
+            {status === "idle" && (
+              <p className="field__hint" style={{ textAlign: "center" }}>
+                Secure payment via M-Pesa · No card needed
+              </p>
+            )}
           </form>
         </aside>
       </div>

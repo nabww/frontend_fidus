@@ -3,11 +3,10 @@ import client from "../../api/client";
 import DashboardShell from "../../components/DashboardShell";
 import { ListEmpty, ListSkeleton } from "../../components/ListState";
 import SearchBox from "../../components/SearchBox";
+import PayoutDetailModal from "../../components/PayoutDetailModal";
 import { useToast } from "../../context/ToastContext";
 import useList from "../../hooks/useList";
-import { kes, matches } from "../../utils/format";
-
-const STATUS_LABELS = { processing: "Processing", paid: "Paid", failed: "Failed", review: "Needs review" };
+import { kes, matches, PAYOUT_STATUS_LABELS } from "../../utils/format";
 const SEARCH_AFTER = 6; // history search only appears once the list is long enough to need it
 
 export default function AdminPayouts() {
@@ -19,6 +18,7 @@ export default function AdminPayouts() {
   const error = previewList.error || historyList.error;
   const [running, setRunning] = useState(false);
   const [query, setQuery] = useState("");
+  const [selectedPayoutId, setSelectedPayoutId] = useState(null);
 
   const reload = () => { previewList.reload(); historyList.reload(); };
   const ready = preview?.vendors.filter((v) => !v.blocker) || [];
@@ -84,6 +84,7 @@ export default function AdminPayouts() {
               <h2 style={{ margin: 0 }}>Ready for payout</h2>
               <p className="muted list-hint" style={{ margin: "0.2rem 0 0" }}>
                 Delivered items are payable immediately · default commission {preview.default_commission_rate}%
+                {readyTotal > 0 && <> · Make sure the B2C account holds at least {kes(readyTotal)}</>}
               </p>
             </div>
             <button className="btn btn--primary" onClick={runNow} disabled={running || ready.length === 0}>
@@ -130,7 +131,12 @@ export default function AdminPayouts() {
               <ListEmpty query={query.trim()} onClear={() => setQuery("")} />
             )}
             {shown.map((p) => (
-              <div key={p.id} className="card order-card">
+              <div
+                key={p.id}
+                className="card order-card clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => setSelectedPayoutId(p.id)}
+              >
                 <div className="order-card__main">
                   <strong>{p.vendor?.name} · {kes(p.net_amount)}</strong>
                   <span className="muted truncate">
@@ -139,9 +145,9 @@ export default function AdminPayouts() {
                     {p.result_desc && p.status !== "paid" && ` · ${p.result_desc}`}
                   </span>
                 </div>
-                <span className={`badge badge--${p.status}`}>{STATUS_LABELS[p.status] || p.status}</span>
+                <span className={`badge badge--${p.status}`}>{PAYOUT_STATUS_LABELS[p.status] || p.status}</span>
                 {p.status === "review" && (
-                  <div className="order-card__actions">
+                  <div className="order-card__actions" onClick={(e) => e.stopPropagation()}>
                     <button className="btn btn--ghost btn--sm" onClick={() => resolve(p, "failed")}>Failed</button>
                     <button className="btn btn--primary btn--sm" onClick={() => resolve(p, "paid")}>Paid</button>
                   </div>
@@ -149,6 +155,17 @@ export default function AdminPayouts() {
               </div>
             ))}
           </div>
+
+          {selectedPayoutId && (
+            <PayoutDetailModal
+              payoutId={selectedPayoutId}
+              onClose={() => setSelectedPayoutId(null)}
+              onResolve={async (payout, outcome) => {
+                await resolve(payout, outcome);
+                setSelectedPayoutId(null);
+              }}
+            />
+          )}
 
           <p className="muted list-hint">
             Per-vendor commission rates are edited on each vendor's page under Vendors.

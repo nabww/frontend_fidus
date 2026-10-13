@@ -92,7 +92,7 @@ export default function OAuthButtons() {
         {GOOGLE_CLIENT_ID && <div ref={googleBtnRef} className="oauth-google" />}
         {APPLE_CLIENT_ID && (
           <button type="button" className="btn btn--ghost oauth-apple" onClick={signInWithApple}>
-             Continue with Apple
+            Continue with Apple
           </button>
         )}
       </div>
