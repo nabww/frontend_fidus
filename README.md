@@ -3,13 +3,15 @@
 React (Vite) storefront and vendor dashboard, role-gated in a single app.
 
 ## Setup
+
 ```bash
 npm install
 cp .env.example .env   # point VITE_API_URL at the backend
-npm run dev
+npm run dev            # serves on :5174 (vite.config.js), API on :5050
 ```
 
 ## Folder structure
+
 ```
 src/
   api/client.js       # axios instance, attaches JWT automatically
@@ -21,6 +23,7 @@ src/
 ```
 
 ## Routing
+
 - `/`, `/products/:id`, `/cart`, `/checkout` — customer flow
 - `/login`, `/register`
 - `/vendor/dashboard`, `/vendor/products/new`, `/vendor/products/:id/edit` — vendor-only,

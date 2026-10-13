@@ -10,14 +10,23 @@ import useList from "../../hooks/useList";
 import { kes, matches, shortDate, vendorTotal } from "../../utils/format";
 
 const FILTERS = ["", "paid", "shipped", "delivered", "pending", "cancelled"];
-const ACTION_LABELS = { shipped: "Mark shipped", delivered: "Mark delivered", cancelled: "Cancel order" };
+const ACTION_LABELS = {
+  shipped: "Mark shipped",
+  delivered: "Mark delivered",
+  cancelled: "Cancel order",
+};
 
 export default function VendorOrders() {
   const navigate = useNavigate();
   const { toast, confirm } = useToast();
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
-  const { data: orders, loading, error, reload } = useList("/orders/vendor", { status: status || undefined });
+  const [page, setPage] = useState(1);
+  const { data, loading, error, reload } = useList("/orders/vendor", {
+    status: status || undefined,
+    page,
+  });
+  const orders = data?.orders;
 
   async function act(order, nextStatus, e) {
     e.preventDefault(); // the card is a Link — don't navigate
@@ -29,7 +38,8 @@ export default function VendorOrders() {
     if (nextStatus === "cancelled") {
       const ok = await confirm({
         title: `Cancel order #${order.order_no}?`,
-        message: "Stock goes back on the shelf. The customer is emailed — a paid order needs a manual M-Pesa refund.",
+        message:
+          "Stock goes back on the shelf. The customer is emailed — a paid order needs a manual M-Pesa refund.",
         confirmLabel: "Cancel order",
         danger: true,
       });
@@ -40,24 +50,47 @@ export default function VendorOrders() {
       toast(`Order #${order.order_no} marked ${nextStatus}`);
       reload();
     } catch (err) {
-      toast(err.response?.data?.message || "Couldn't update the order", { type: "error", duration: 3000 });
+      toast(err.response?.data?.message || "Couldn't update the order", {
+        type: "error",
+        duration: 3000,
+      });
     }
   }
 
   const shown = orders?.filter((o) =>
-    matches(query, `#${o.order_no}`, o.customer?.name, o.items.map((i) => i.product?.name).join(" ")));
+    matches(
+      query,
+      `#${o.order_no}`,
+      o.customer?.name,
+      o.items.map((i) => i.product?.name).join(" ")
+    )
+  );
 
   return (
     <DashboardShell area="vendor">
       <div className="toolbar">
         <SearchBox value={query} onChange={setQuery} placeholder="Order #, customer or product" />
-        <FilterChips options={FILTERS} value={status} onChange={setStatus} />
+        <FilterChips
+          options={FILTERS}
+          value={status}
+          onChange={(s) => {
+            setStatus(s);
+            setPage(1);
+          }}
+        />
       </div>
 
       {error && <p className="error-text">{error}</p>}
       {!orders && !error && <ListSkeleton />}
       {shown?.length === 0 && (
-        <ListEmpty query={query.trim()} filtered={status} onClear={() => { setQuery(""); setStatus(""); }}>
+        <ListEmpty
+          query={query.trim()}
+          filtered={status}
+          onClear={() => {
+            setQuery("");
+            setStatus("");
+          }}
+        >
           No orders yet — they'll appear here when customers buy your products.
         </ListEmpty>
       )}
@@ -66,7 +99,9 @@ export default function VendorOrders() {
         {shown?.map((o) => (
           <Link key={o.id} to={`/vendor/orders/${o.id}`} className="card order-card">
             <div className="order-card__main">
-              <strong>#{o.order_no} · {o.customer?.name || "Customer"}</strong>
+              <strong>
+                #{o.order_no} · {o.customer?.name || "Customer"}
+              </strong>
               <span className="muted truncate">
                 {shortDate(o.created_at || o.createdAt)} ·{" "}
                 {o.items.map((i) => `${i.quantity}× ${i.product?.name || "item"}`).join(", ")}
@@ -78,9 +113,11 @@ export default function VendorOrders() {
             {o.allowed?.length > 0 && (
               <div className="order-card__actions" onClick={(e) => e.preventDefault()}>
                 {o.allowed.map((s) => (
-                  <button key={s}
+                  <button
+                    key={s}
                     className={`btn btn--sm ${s === "cancelled" ? "btn--ghost" : "btn--primary"}`}
-                    onClick={(e) => act(o, s, e)}>
+                    onClick={(e) => act(o, s, e)}
+                  >
                     {ACTION_LABELS[s]}
                   </button>
                 ))}
@@ -89,6 +126,28 @@ export default function VendorOrders() {
           </Link>
         ))}
       </div>
+
+      {data?.pages > 1 && (
+        <div className="pager">
+          <button
+            className="btn btn--ghost btn--sm"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
+            ← Prev
+          </button>
+          <span className="muted">
+            Page {data.page} of {data.pages} · {data.total} orders
+          </span>
+          <button
+            className="btn btn--ghost btn--sm"
+            disabled={page >= data.pages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </DashboardShell>
   );
 }
