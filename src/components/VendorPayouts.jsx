@@ -53,6 +53,10 @@ export default function VendorPayouts() {
           Commission {Number(summary.commission_rate)}% · paid out after delivery
         </span>
       </div>
+      <p className="muted" style={{ margin: "0.3rem 0 0", fontSize: "0.85rem" }}>
+        Pickup and direct sales are paid the next morning. Delivered orders are paid
+        the morning after delivery is confirmed.
+      </p>
 
       <div className="stat-cards">
         <div className="stat-card">

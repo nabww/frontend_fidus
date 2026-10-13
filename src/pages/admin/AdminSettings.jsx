@@ -38,6 +38,7 @@ export default function AdminSettings() {
   const [initPassword, setInitPassword] = useState("");
   const [dirty, setDirty] = useState({});
   const [posRate, setPosRate] = useState("1.5");
+  const [passShipping, setPassShipping] = useState(false);
   const [posSaving, setPosSaving] = useState(false);
   // SMTP
   const [smtp, setSmtp] = useState({ smtp_host: "", smtp_port: "587", smtp_user: "", smtp_pass: "", smtp_from: "" });
@@ -62,6 +63,7 @@ export default function AdminSettings() {
       setMeta(mpesaRes.data);
       setDirty({});
       setPosRate(String(posRes.data.pos_commission_rate ?? "1.5"));
+      setPassShipping(Boolean(posRes.data.pass_shipping_to_vendor));
       setSmtp({
         smtp_host: smtpRes.data.smtp_host || "",
         smtp_port: smtpRes.data.smtp_port || "587",
@@ -138,8 +140,9 @@ export default function AdminSettings() {
     try {
       const { data } = await client.put("/admin/settings/pos", {
         pos_commission_rate: Number(posRate),
+        pass_shipping_to_vendor: passShipping,
       });
-      toast(data.message || "POS commission saved", { type: "success" });
+      toast(data.message || "POS settings saved", { type: "success" });
     } catch (err) {
       toast(err.response?.data?.message || "Save failed", { type: "error" });
     } finally {
@@ -325,11 +328,26 @@ export default function AdminSettings() {
                 Applied to all direct sales. Default is 1.5%.
               </p>
             </div>
+            <div className="field">
+              <label htmlFor="pass_shipping_to_vendor" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  id="pass_shipping_to_vendor"
+                  type="checkbox"
+                  checked={passShipping}
+                  onChange={(e) => setPassShipping(e.target.checked)}
+                />
+                Pass delivery fees to vendors
+              </label>
+              <p className="muted" style={{ fontSize: "0.8rem", margin: "0.3rem 0 0" }}>
+                When on, a delivered order whose items all belong to one vendor adds its delivery
+                fee to that vendor's payout (no commission on it). Multi-vendor orders keep the fee.
+              </p>
+            </div>
           </div>
         </div>
         <div className="settings-actions">
           <button type="submit" className="btn btn--primary" disabled={posSaving}>
-            {posSaving ? "Saving..." : "Save Direct Sale Commission"}
+            {posSaving ? "Saving..." : "Save Direct Sale Settings"}
           </button>
         </div>
       </form>
